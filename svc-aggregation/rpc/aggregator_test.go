@@ -962,7 +962,7 @@ func TestAggregator_DeleteAggregate(t *testing.T) {
 		common.TruncateDB(common.OnDisk)
 		common.TruncateDB(common.InMemory)
 	}()
-	system.DeleteAggregateSubscription = func(url, session string, systems []agmodel.OdataID) error {
+	system.DeleteAggregateSubscription = func(ctx context.Context, url, session string, systems []agmodel.OdataID) error {
 		return nil
 	}
 	req := agmodel.Aggregate{
@@ -1076,7 +1076,7 @@ func TestAggregator_AddElementsToAggregate(t *testing.T) {
 		ctx context.Context
 		req *aggregatorproto.AggregatorRequest
 	}
-	system.UpdateSubscription = func(aggragateID string, systemID []agmodel.OdataID, session string) error {
+	system.UpdateSubscription = func(ctx context.Context, aggragateID string, systemID []agmodel.OdataID, session string) error {
 		return nil
 	}
 	tests := []struct {
@@ -1233,7 +1233,7 @@ func TestAggregator_RemoveElementsFromAggregate(t *testing.T) {
 	})
 
 	missingparamReq, _ := json.Marshal(agmodel.Aggregate{})
-	system.RemoveSubscription = func(aggragateID string, systemID []agmodel.OdataID, session string) error {
+	system.RemoveSubscription = func(ctx context.Context, aggragateID string, systemID []agmodel.OdataID, session string) error {
 		return nil
 	}
 

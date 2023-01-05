@@ -15,6 +15,7 @@
 package system
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -29,12 +30,12 @@ import (
 )
 
 // GetAllConnectionMethods is the handler for getting the connection methods collection
-func (e *ExternalInterface) GetAllConnectionMethods(req *aggregatorproto.AggregatorRequest) response.RPC {
+func (e *ExternalInterface) GetAllConnectionMethods(ctx context.Context, req *aggregatorproto.AggregatorRequest) response.RPC {
 	connectionMethods, err := e.GetAllKeysFromTable("ConnectionMethod")
 	if err != nil {
-		l.Log.Error("error getting connection methods : " + err.Error())
+		l.LogWithFields(ctx).Error("error getting connection methods : " + err.Error())
 		errorMessage := err.Error()
-		return common.GeneralError(http.StatusServiceUnavailable, response.CouldNotEstablishConnection, errorMessage, []interface{}{config.Data.DBConf.OnDiskHost + ":" + config.Data.DBConf.OnDiskPort}, nil)
+		return common.GeneralError(ctx, http.StatusServiceUnavailable, response.CouldNotEstablishConnection, errorMessage, []interface{}{config.Data.DBConf.OnDiskHost + ":" + config.Data.DBConf.OnDiskPort}, nil)
 	}
 	var members = make([]agresponse.ListMember, 0)
 	for i := 0; i < len(connectionMethods); i++ {
@@ -62,15 +63,15 @@ func (e *ExternalInterface) GetAllConnectionMethods(req *aggregatorproto.Aggrega
 }
 
 // GetConnectionMethodInfo is the handler for getting the connection method
-func (e *ExternalInterface) GetConnectionMethodInfo(req *aggregatorproto.AggregatorRequest) response.RPC {
+func (e *ExternalInterface) GetConnectionMethodInfo(ctx context.Context, req *aggregatorproto.AggregatorRequest) response.RPC {
 	connectionmethod, err := e.GetConnectionMethod(req.URL)
 	if err != nil {
-		l.Log.Error("error getting  connectionmethod : " + err.Error())
+		l.LogWithFields(ctx).Error("error getting  connectionmethod : " + err.Error())
 		errorMessage := err.Error()
 		if errors.DBKeyNotFound == err.ErrNo() {
-			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"ConnectionMethod", req.URL}, nil)
+			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"ConnectionMethod", req.URL}, nil)
 		}
-		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
+		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
 	}
 	var data = strings.Split(req.URL, "/redfish/v1/AggregationService/ConnectionMethods/")
 	commonResponse := response.Response{

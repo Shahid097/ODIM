@@ -76,11 +76,11 @@ type Device struct {
 // ExternalInterface struct holds the function pointers all outboud services
 type ExternalInterface struct {
 	ContactClient            func(string, string, string, string, interface{}, map[string]string) (*http.Response, error)
-	Auth                     func(context.Context, string, []string, []string) (response.RPC, error)
-	GetSessionUserName       func(context.Context, string) (string, error)
-	CreateChildTask          func(context.Context, string, string) (string, error)
-	CreateTask               func(context.Context, string) (string, error)
-	UpdateTask               func(context.Context, common.TaskData) error
+	Auth                     func(string, []string, []string) (response.RPC, error)
+	GetSessionUserName       func(string) (string, error)
+	CreateChildTask          func(string, string) (string, error)
+	CreateTask               func(string) (string, error)
+	UpdateTask               func(common.TaskData) error
 	CreateSubcription        func(context.Context, []string)
 	PublishEvent             func(context.Context, []string, string)
 	PublishEventMB           func(context.Context, string, string, string)
@@ -90,7 +90,7 @@ type ExternalInterface struct {
 	DecryptPassword          func([]byte) ([]byte, error)
 	DeleteComputeSystem      func(int, string) *errors.Error
 	DeleteSystem             func(string) *errors.Error
-	DeleteEventSubscription  func(context.Context, string) (*eventsproto.EventSubResponse, error)
+	DeleteEventSubscription  func(string) (*eventsproto.EventSubResponse, error)
 	EventNotification        func(context.Context, string, string, string)
 	GetAllKeysFromTable      func(string) ([]string, error)
 	GetConnectionMethod      func(string) (agmodel.ConnectionMethod, *errors.Error)
@@ -135,7 +135,7 @@ type getResourceRequest struct {
 	GetPluginStatus   func(context.Context, agmodel.Plugin) bool
 	UpdateFlag        bool
 	TargetURI         string
-	UpdateTask        func(context.Context, common.TaskData) error
+	UpdateTask        func(common.TaskData) error
 	BMCAddress        string
 }
 
@@ -261,10 +261,10 @@ func genError(ctx context.Context, errorMessage string, respPtr *response.RPC, h
 }
 
 // UpdateTaskData update the task with the given data
-func UpdateTaskData(ctx context.Context, taskData common.TaskData) error {
+func UpdateTaskData(taskData common.TaskData) error {
 	var res map[string]interface{}
 	if err := json.Unmarshal([]byte(taskData.TaskRequest), &res); err != nil {
-		l.LogWithFields(ctx).Error(err)
+		return err
 	}
 	reqStr := logs.MaskRequestBody(res)
 
@@ -278,11 +278,11 @@ func UpdateTaskData(ctx context.Context, taskData common.TaskData) error {
 		ResponseBody:  respBody,
 	}
 
-	err := services.UpdateTask(ctx, taskData.TaskID, taskData.TaskState, taskData.TaskStatus, taskData.PercentComplete, payLoad, time.Now())
+	err := services.UpdateTask(taskData.TaskID, taskData.TaskState, taskData.TaskStatus, taskData.PercentComplete, payLoad, time.Now())
 	if err != nil && (err.Error() == common.Cancelling) {
 		// We cant do anything here as the task has done it work completely, we cant reverse it.
 		//Unless if we can do opposite/reverse action for delete server which is add server.
-		services.UpdateTask(ctx, taskData.TaskID, common.Cancelled, taskData.TaskStatus, taskData.PercentComplete, payLoad, time.Now())
+		services.UpdateTask(taskData.TaskID, common.Cancelled, taskData.TaskStatus, taskData.PercentComplete, payLoad, time.Now())
 		if taskData.PercentComplete == 0 {
 			return fmt.Errorf("error while starting the task: %v", err)
 		}
@@ -1008,11 +1008,11 @@ func (h *respHolder) getResourceDetails(ctx context.Context, taskID string, prog
 	}
 	progress = progress + alottedWork
 	var task = fillTaskData(taskID, req.TargetURI, req.TaskRequest, response.RPC{}, common.Running, common.OK, progress, http.MethodPost)
-	err = req.UpdateTask(ctx, task)
+	err = req.UpdateTask(task)
 
 	if err != nil && (err.Error() == common.Cancelling) {
 		var task = fillTaskData(taskID, req.TargetURI, req.TaskRequest, response.RPC{}, common.Cancelled, common.OK, progress, http.MethodPost)
-		req.UpdateTask(ctx, task)
+		req.UpdateTask(task)
 
 	}
 	return progress
@@ -1294,7 +1294,7 @@ func checkStatus(ctx context.Context, pluginContactRequest getResourceRequest, r
 		if err != nil {
 			errMsg := err.Error()
 			l.LogWithFields(ctx).Error(errMsg)
-			return common.GeneralError(ctx, getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo), getResponse.StatusCode, queueList
+			return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo), getResponse.StatusCode, queueList
 		}
 		pluginContactRequest.Token = token
 	} else {
@@ -1312,9 +1312,9 @@ func checkStatus(ctx context.Context, pluginContactRequest getResourceRequest, r
 		errMsg := err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
 		if getResponse.StatusCode == http.StatusNotFound {
-			return common.GeneralError(ctx, getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil), getResponse.StatusCode, queueList
+			return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil), getResponse.StatusCode, queueList
 		}
-		return common.GeneralError(ctx, getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo), getResponse.StatusCode, queueList
+		return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo), getResponse.StatusCode, queueList
 	}
 	// extracting the EMB Type and EMB Queue name
 	var statusResponse common.StatusResponse
@@ -1323,7 +1323,7 @@ func checkStatus(ctx context.Context, pluginContactRequest getResourceRequest, r
 		errMsg := err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
 		getResponse.StatusCode = http.StatusInternalServerError
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo), getResponse.StatusCode, queueList
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo), getResponse.StatusCode, queueList
 	}
 
 	// check the firmware version of plugin is matched with connection method variant version
@@ -1331,7 +1331,7 @@ func checkStatus(ctx context.Context, pluginContactRequest getResourceRequest, r
 		errMsg := fmt.Sprintf("Provided firmware version %s does not match supported firmware version %s of the plugin %s", cmVariants.FirmwareVersion, statusResponse.Version, cmVariants.PluginID)
 		l.LogWithFields(ctx).Error(errMsg)
 		getResponse.StatusCode = http.StatusBadRequest
-		return common.GeneralError(ctx, http.StatusBadRequest, response.PropertyValueNotInList, errMsg, []interface{}{"FirmwareVersion", statusResponse.Version}, taskInfo), getResponse.StatusCode, queueList
+		return common.GeneralError(http.StatusBadRequest, response.PropertyValueNotInList, errMsg, []interface{}{"FirmwareVersion", statusResponse.Version}, taskInfo), getResponse.StatusCode, queueList
 	}
 	if statusResponse.EventMessageBus != nil {
 		for i := 0; i < len(statusResponse.EventMessageBus.EmbQueue); i++ {
@@ -1375,7 +1375,7 @@ func (e *ExternalInterface) getTelemetryService(ctx context.Context, taskID, tar
 	}
 	percentComplete = progress
 	task := fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
-	e.UpdateTask(ctx, task)
+	e.UpdateTask(task)
 
 	// Populate the MetricReportDefinitions for telemetry service
 	progress = percentComplete
@@ -1386,7 +1386,7 @@ func (e *ExternalInterface) getTelemetryService(ctx context.Context, taskID, tar
 	}
 	percentComplete = progress
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
-	e.UpdateTask(ctx, task)
+	e.UpdateTask(task)
 
 	// Populate the MetricReports for telemetry service
 	var metricReportEstimatedWork int32
@@ -1398,7 +1398,7 @@ func (e *ExternalInterface) getTelemetryService(ctx context.Context, taskID, tar
 	}
 	percentComplete = progress + metricReportEstimatedWork
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
-	e.UpdateTask(ctx, task)
+	e.UpdateTask(task)
 
 	// Populate the Triggers for telemetry service
 	pluginContactRequest.OID = "/redfish/v1/TelemetryService/Triggers"
@@ -1409,7 +1409,7 @@ func (e *ExternalInterface) getTelemetryService(ctx context.Context, taskID, tar
 	}
 	percentComplete = progress
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
-	e.UpdateTask(ctx, task)
+	e.UpdateTask(task)
 	return percentComplete
 }
 
@@ -1532,7 +1532,7 @@ func (e *ExternalInterface) getTeleInfo(ctx context.Context, taskID string, prog
 	}
 	progress = progress + alottedWork
 	var task = fillTaskData(taskID, req.TargetURI, req.TaskRequest, response.RPC{}, common.Running, common.OK, progress, http.MethodPost)
-	req.UpdateTask(ctx, task)
+	req.UpdateTask(task)
 	return progress
 }
 
@@ -1691,15 +1691,15 @@ func (e *ExternalInterface) monitorPluginTask(ctx context.Context, subTaskChanne
 			subTaskChannel <- http.StatusInternalServerError
 			errMsg := "Unable to parse the simple update respone" + err.Error()
 			l.LogWithFields(ctx).Warn(errMsg)
-			common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, monitorTaskData.taskInfo)
+			common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, monitorTaskData.taskInfo)
 			return monitorTaskData.getResponse, err
 		}
 		var updatetask = fillTaskData(monitorTaskData.subTaskID, monitorTaskData.serverURI, monitorTaskData.updateRequestBody, monitorTaskData.resp, task.TaskState, task.TaskStatus, task.PercentComplete, http.MethodPost)
-		err := e.UpdateTask(ctx, updatetask)
+		err := e.UpdateTask(updatetask)
 		if err != nil && err.Error() == common.Cancelling {
 			var updatetask = fillTaskData(monitorTaskData.subTaskID, monitorTaskData.serverURI, monitorTaskData.updateRequestBody, monitorTaskData.resp, common.Cancelled, common.Critical, 100, http.MethodPost)
 			subTaskChannel <- http.StatusInternalServerError
-			e.UpdateTask(ctx, updatetask)
+			e.UpdateTask(updatetask)
 			return monitorTaskData.getResponse, err
 		}
 		time.Sleep(time.Second * 5)
@@ -1710,7 +1710,7 @@ func (e *ExternalInterface) monitorPluginTask(ctx context.Context, subTaskChanne
 			subTaskChannel <- monitorTaskData.getResponse.StatusCode
 			errMsg := err.Error()
 			l.LogWithFields(ctx).Warn(errMsg)
-			common.GeneralError(ctx, monitorTaskData.getResponse.StatusCode, monitorTaskData.getResponse.StatusMessage, errMsg, monitorTaskData.getResponse.MsgArgs, monitorTaskData.taskInfo)
+			common.GeneralError(monitorTaskData.getResponse.StatusCode, monitorTaskData.getResponse.StatusMessage, errMsg, monitorTaskData.getResponse.MsgArgs, monitorTaskData.taskInfo)
 			return monitorTaskData.getResponse, err
 		}
 		if monitorTaskData.getResponse.StatusCode == http.StatusOK {

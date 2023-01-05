@@ -31,7 +31,7 @@ func (e *ExternalInterface) GetAggregationSourceCollection(ctx context.Context) 
 	if err != nil {
 		errorMessage := err.Error()
 		l.LogWithFields(ctx).Error("Unable to get aggregation source : " + errorMessage)
-		return common.GeneralError(ctx, http.StatusServiceUnavailable, response.CouldNotEstablishConnection, errorMessage, []interface{}{config.Data.DBConf.OnDiskHost + ":" + config.Data.DBConf.OnDiskPort}, nil)
+		return common.GeneralError(http.StatusServiceUnavailable, response.CouldNotEstablishConnection, errorMessage, []interface{}{config.Data.DBConf.OnDiskHost + ":" + config.Data.DBConf.OnDiskPort}, nil)
 	}
 	var members = make([]agresponse.ListMember, 0)
 	for i := 0; i < len(aggregationSourceKeys); i++ {
@@ -71,9 +71,9 @@ func (e *ExternalInterface) GetAggregationSource(ctx context.Context, reqURI str
 		errorMessage := err.Error()
 		l.LogWithFields(ctx).Error("Unable to get aggregation source : " + errorMessage)
 		if errors.DBKeyNotFound == err.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"AggregationSource", reqURI}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"AggregationSource", reqURI}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
 	}
 	links := aggregationSource.Links.(map[string]interface{})
 	connectionMethodLink := links["ConnectionMethod"].(map[string]interface{})
@@ -84,9 +84,9 @@ func (e *ExternalInterface) GetAggregationSource(ctx context.Context, reqURI str
 		errorMessage := err.Error()
 		l.LogWithFields(ctx).Error("Unable to get connectionmethod : " + errorMessage)
 		if errors.DBKeyNotFound == err.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"ConnectionMethod", connectionMethodOdataID}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"ConnectionMethod", connectionMethodOdataID}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
 	}
 	name := connectionMethod.ConnectionMethodType + "-" + aggregationSource.HostName
 	var data = strings.Split(reqURI, "/redfish/v1/AggregationService/AggregationSources/")

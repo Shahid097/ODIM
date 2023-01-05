@@ -67,13 +67,13 @@ func (e *ExternalInterface) CreateAggregate(ctx context.Context, req *aggregator
 	if err != nil {
 		errMsg := "unable to parse the create request" + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusBadRequest, response.MalformedJSON, errMsg, nil, nil)
+		return common.GeneralError(http.StatusBadRequest, response.MalformedJSON, errMsg, nil, nil)
 	}
 	//empty request check
 	if reflect.DeepEqual(agmodel.Aggregate{}, createRequest) {
 		errMsg := "empty request can not be processed"
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{"Elements"}, nil)
+		return common.GeneralError(http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{"Elements"}, nil)
 	}
 
 	statuscode, err := validateElements(createRequest.Elements)
@@ -81,7 +81,7 @@ func (e *ExternalInterface) CreateAggregate(ctx context.Context, req *aggregator
 		errMsg := "invalid elements for create an aggregate" + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
 		errArgs := []interface{}{"Elements", string(req.RequestBody)}
-		return common.GeneralError(ctx, statuscode, response.ResourceNotFound, errMsg, errArgs, nil)
+		return common.GeneralError(statuscode, response.ResourceNotFound, errMsg, errArgs, nil)
 	}
 	targetURI := "/redfish/v1/AggregationService/Aggregates"
 	aggregateUUID := uuid.NewV4().String()
@@ -91,12 +91,12 @@ func (e *ExternalInterface) CreateAggregate(ctx context.Context, req *aggregator
 	if dbErr != nil {
 		errMsg := dbErr.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 	err = addAggregateHost(aggregateUUID, createRequest)
 	if err != nil {
 		l.LogWithFields(ctx).Error(err.Error())
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, err.Error(), nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, err.Error(), nil, nil)
 	}
 	commonResponse := response.Response{
 		OdataType:    "#Aggregate.v1_0_1.Aggregate",
@@ -152,7 +152,7 @@ func (e *ExternalInterface) GetAllAggregates(ctx context.Context, req *aggregato
 	if err != nil {
 		l.LogWithFields(ctx).Error("error getting aggregate : " + err.Error())
 		errorMessage := err.Error()
-		return common.GeneralError(ctx, http.StatusServiceUnavailable, response.CouldNotEstablishConnection, errorMessage, []interface{}{config.Data.DBConf.OnDiskHost + ":" + config.Data.DBConf.OnDiskPort}, nil)
+		return common.GeneralError(http.StatusServiceUnavailable, response.CouldNotEstablishConnection, errorMessage, []interface{}{config.Data.DBConf.OnDiskHost + ":" + config.Data.DBConf.OnDiskPort}, nil)
 	}
 	var members = make([]agresponse.ListMember, 0)
 	for i := 0; i < len(aggregateKeys); i++ {
@@ -188,9 +188,9 @@ func (e *ExternalInterface) GetAggregate(ctx context.Context, req *aggregatorpro
 		l.Log.Error("error getting  Aggregate : " + err.Error())
 		errorMessage := err.Error()
 		if errors.DBKeyNotFound == err.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"Aggregate", req.URL}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"Aggregate", req.URL}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
 	}
 	var data = strings.Split(req.URL, "/redfish/v1/AggregationService/Aggregates/")
 	var ID = data[1]
@@ -237,18 +237,18 @@ func (e *ExternalInterface) DeleteAggregate(ctx context.Context, req *aggregator
 		l.LogWithFields(ctx).Error("error getting  Aggregate : " + err.Error())
 		errorMessage := err.Error()
 		if errors.DBKeyNotFound == err.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"Aggregate", req.URL}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"Aggregate", req.URL}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
 	}
 	err = agmodel.DeleteAggregate(req.URL)
 	if err != nil {
 		l.LogWithFields(ctx).Error("error while deleting an aggregate : " + err.Error())
 		errorMessage := err.Error()
 		if errors.DBKeyNotFound == err.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"Aggregate", req.URL}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"Aggregate", req.URL}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
 	}
 	err1 := DeleteAggregateSubscription(ctx, req.URL, req.SessionToken, aggregate.Elements)
 	if err1 != nil {
@@ -267,13 +267,13 @@ func (e *ExternalInterface) AddElementsToAggregate(ctx context.Context, req *agg
 	if err != nil {
 		errMsg := "unable to parse the create request" + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusBadRequest, response.MalformedJSON, errMsg, nil, nil)
+		return common.GeneralError(http.StatusBadRequest, response.MalformedJSON, errMsg, nil, nil)
 	}
 	//empty request check
 	if reflect.DeepEqual(agmodel.Aggregate{}, addRequest) || reflect.DeepEqual(addRequest.Elements, []agmodel.OdataID{}) {
 		errMsg := "empty request can not be processed"
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{"Elements"}, nil)
+		return common.GeneralError(http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{"Elements"}, nil)
 	}
 
 	statuscode, err := validateElements(addRequest.Elements)
@@ -281,13 +281,13 @@ func (e *ExternalInterface) AddElementsToAggregate(ctx context.Context, req *agg
 		errMsg := "invalid elements for create an aggregate" + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
 		errArgs := []interface{}{"Elements", fmt.Sprintf("%v", addRequest)}
-		return common.GeneralError(ctx, statuscode, response.ResourceNotFound, errMsg, errArgs, nil)
+		return common.GeneralError(statuscode, response.ResourceNotFound, errMsg, errArgs, nil)
 	}
 
 	if req.URL == "" {
 		errMsg := "request uri is not provided"
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{"request uri"}, nil)
+		return common.GeneralError(http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{"request uri"}, nil)
 	}
 	url := strings.Split(req.URL, "/redfish/v1/AggregationService/Aggregates/")
 	aggregateID := strings.Split(url[1], "/")[0]
@@ -297,22 +297,22 @@ func (e *ExternalInterface) AddElementsToAggregate(ctx context.Context, req *agg
 		l.LogWithFields(ctx).Error("error getting  Aggregate : " + err1.Error())
 		errorMessage := err1.Error()
 		if errors.DBKeyNotFound == err1.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errorMessage, []interface{}{"Aggregate", aggregateURL}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errorMessage, []interface{}{"Aggregate", aggregateURL}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
 	}
 	if checkElementsPresent(addRequest.Elements, aggregate.Elements) {
 		errMsg := "Elements present in aggregate"
 		l.LogWithFields(ctx).Error(errMsg)
 		errArgs := []interface{}{"AddElements", "Elements", fmt.Sprintf("%v", addRequest.Elements)}
-		return common.GeneralError(ctx, http.StatusConflict, response.ResourceAlreadyExists, errMsg, errArgs, nil)
+		return common.GeneralError(http.StatusConflict, response.ResourceAlreadyExists, errMsg, errArgs, nil)
 	}
 
 	dbErr := agmodel.AddElementsToAggregate(addRequest, aggregateURL)
 	if dbErr != nil {
 		errMsg := dbErr.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 	err = UpdateSubscription(ctx, aggregateID, addRequest.Elements, req.SessionToken)
 	if err != nil {
@@ -347,25 +347,25 @@ func (e *ExternalInterface) RemoveElementsFromAggregate(ctx context.Context, req
 	if err != nil {
 		errMsg := "unable to parse the create request" + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusBadRequest, response.MalformedJSON, errMsg, nil, nil)
+		return common.GeneralError(http.StatusBadRequest, response.MalformedJSON, errMsg, nil, nil)
 	}
 
 	//empty request check
 	if reflect.DeepEqual(agmodel.Aggregate{}, removeRequest) || reflect.DeepEqual(removeRequest.Elements, []agmodel.OdataID{}) {
 		errMsg := "empty request can not be processed"
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{"Elements"}, nil)
+		return common.GeneralError(http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{"Elements"}, nil)
 	}
 
 	if req.URL == "" {
 		errMsg := "request uri is not provided"
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{"request uri"}, nil)
+		return common.GeneralError(http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{"request uri"}, nil)
 	}
 	if checkDuplicateElements(removeRequest.Elements) {
 		errMsg := "duplicate elements present"
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusBadRequest, response.ResourceCannotBeDeleted, errMsg, nil, nil)
+		return common.GeneralError(http.StatusBadRequest, response.ResourceCannotBeDeleted, errMsg, nil, nil)
 	}
 	url := strings.Split(req.URL, "/redfish/v1/AggregationService/Aggregates/")
 	aggregateID := strings.Split(url[1], "/")[0]
@@ -376,22 +376,22 @@ func (e *ExternalInterface) RemoveElementsFromAggregate(ctx context.Context, req
 		l.LogWithFields(ctx).Error("error getting aggregate : " + err1.Error())
 		errorMessage := err1.Error()
 		if errors.DBKeyNotFound == err1.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"Aggregate", req.URL}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"Aggregate", req.URL}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
 	}
 	if !checkRemovingElementsPresent(removeRequest.Elements, aggregate.Elements) {
 		errMsg := "Elements not present in aggregate"
 		l.LogWithFields(ctx).Error(errMsg)
 		errArgs := []interface{}{"Elements", fmt.Sprintf("%v", removeRequest.Elements)}
-		return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, errArgs, nil)
+		return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, errArgs, nil)
 	}
 
 	dbErr := agmodel.RemoveElementsFromAggregate(removeRequest, aggregateURL)
 	if dbErr != nil {
 		errMsg := dbErr.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 	err = RemoveSubscription(ctx, aggregateID, removeRequest.Elements, req.SessionToken)
 	if err != nil {
@@ -464,7 +464,7 @@ func (e *ExternalInterface) ResetElementsOfAggregate(ctx context.Context, taskID
 	if err := json.Unmarshal(req.RequestBody, &resetRequest); err != nil {
 		errMsg := "error while trying to validate request fields: " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusBadRequest, response.MalformedJSON, errMsg, nil, taskInfo)
+		return common.GeneralError(http.StatusBadRequest, response.MalformedJSON, errMsg, nil, taskInfo)
 	}
 
 	// Validating the request JSON properties for case sensitive
@@ -472,11 +472,11 @@ func (e *ExternalInterface) ResetElementsOfAggregate(ctx context.Context, taskID
 	if err != nil {
 		errMsg := "error while validating request parameters: " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo)
 	} else if invalidProperties != "" {
 		errorMessage := "error: one or more properties given in the request body are not valid, ensure properties are listed in uppercamelcase "
 		l.LogWithFields(ctx).Error(errorMessage)
-		resp := common.GeneralError(ctx, http.StatusBadRequest, response.PropertyUnknown, errorMessage, []interface{}{invalidProperties}, taskInfo)
+		resp := common.GeneralError(http.StatusBadRequest, response.PropertyUnknown, errorMessage, []interface{}{invalidProperties}, taskInfo)
 		return resp
 	}
 
@@ -484,7 +484,7 @@ func (e *ExternalInterface) ResetElementsOfAggregate(ctx context.Context, taskID
 	if err != nil {
 		errMsg := "error while trying to validate request fields: " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{missedProperty}, taskInfo)
+		return common.GeneralError(http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{missedProperty}, taskInfo)
 	}
 
 	url := strings.Split(req.URL, "/redfish/v1/AggregationService/Aggregates/")
@@ -496,9 +496,9 @@ func (e *ExternalInterface) ResetElementsOfAggregate(ctx context.Context, taskID
 		errorMessage := err1.Error()
 		l.LogWithFields(ctx).Error("error getting aggregate : " + errorMessage)
 		if errors.DBKeyNotFound == err1.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, err1.Error(), []interface{}{"Aggregate", req.URL}, taskInfo)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, err1.Error(), []interface{}{"Aggregate", req.URL}, taskInfo)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage, nil, taskInfo)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, taskInfo)
 	}
 
 	// subTaskChan is a buffered channel with buffer size equal to total number of elements.
@@ -527,10 +527,10 @@ func (e *ExternalInterface) ResetElementsOfAggregate(ctx context.Context, taskID
 					if i < len(aggregate.Elements)-1 {
 						percentComplete = int32(((i + 1) / len(aggregate.Elements)) * 100)
 						var task = fillTaskData(taskID, targetURI, string(req.RequestBody), resp, common.Running, common.OK, percentComplete, http.MethodPost)
-						err := e.UpdateTask(ctxt, task)
+						err := e.UpdateTask(task)
 						if err != nil && err.Error() == common.Cancelling {
 							task = fillTaskData(taskID, targetURI, string(req.RequestBody), resp, common.Cancelled, common.OK, percentComplete, http.MethodPost)
-							e.UpdateTask(ctxt, task)
+							e.UpdateTask(task)
 							cancelled = true
 						}
 					}
@@ -573,7 +573,7 @@ func (e *ExternalInterface) ResetElementsOfAggregate(ctx context.Context, taskID
 	if resp.StatusCode != http.StatusOK {
 		errMsg := "one or more of the reset actions failed. for more information please check SubTasks in URI: /redfish/v1/TaskService/Tasks/" + taskID
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, resp.StatusCode, resp.StatusMessage, errMsg, nil, taskInfo)
+		return common.GeneralError(resp.StatusCode, resp.StatusMessage, errMsg, nil, taskInfo)
 	}
 
 	l.LogWithFields(ctx).Info("all reset actions are successfully completed. for more information please check SubTasks in URI: /redfish/v1/TaskService/Tasks/" + taskID)
@@ -585,10 +585,10 @@ func (e *ExternalInterface) ResetElementsOfAggregate(ctx context.Context, taskID
 	}
 	resp.Body = args.CreateGenericErrorResponse()
 	var task = fillTaskData(taskID, targetURI, string(req.RequestBody), resp, common.Completed, taskStatus, percentComplete, http.MethodPost)
-	err = e.UpdateTask(ctx, task)
+	err = e.UpdateTask(task)
 	if err != nil && err.Error() == common.Cancelling {
 		task = fillTaskData(taskID, targetURI, string(req.RequestBody), resp, common.Cancelled, common.Critical, percentComplete, http.MethodPost)
-		e.UpdateTask(ctx, task)
+		e.UpdateTask(task)
 		runtime.Goexit()
 	}
 	return resp
@@ -600,7 +600,7 @@ func (e *ExternalInterface) resetSystem(ctx context.Context, taskID, reqBody str
 	var resp response.RPC
 	var percentComplete int32
 	//Create the child Task
-	subTaskURI, err := e.CreateChildTask(ctx, sessionUserName, taskID)
+	subTaskURI, err := e.CreateChildTask(sessionUserName, taskID)
 	if err != nil {
 		subTaskChan <- http.StatusInternalServerError
 		l.LogWithFields(ctx).Error("error while trying to create sub task")
@@ -621,7 +621,7 @@ func (e *ExternalInterface) resetSystem(ctx context.Context, taskID, reqBody str
 		subTaskChan <- http.StatusNotFound
 		errMsg := "error: SystemUUID not found"
 		l.LogWithFields(ctx).Error(errMsg)
-		common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"SystemUUID", ""}, taskInfo)
+		common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"SystemUUID", ""}, taskInfo)
 		return
 	}
 
@@ -632,7 +632,7 @@ func (e *ExternalInterface) resetSystem(ctx context.Context, taskID, reqBody str
 		subTaskChan <- http.StatusNotFound
 		errMsg := err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"target", uuid}, taskInfo)
+		common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"target", uuid}, taskInfo)
 		return
 	}
 	decryptedPasswordByte, err := e.DecryptPassword(target.Password)
@@ -640,7 +640,7 @@ func (e *ExternalInterface) resetSystem(ctx context.Context, taskID, reqBody str
 		errMsg := "error while trying to decrypt device password: " + err.Error()
 		subTaskChan <- http.StatusInternalServerError
 		l.LogWithFields(ctx).Error(errMsg)
-		common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo)
+		common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo)
 		return
 	}
 	target.Password = decryptedPasswordByte
@@ -650,7 +650,7 @@ func (e *ExternalInterface) resetSystem(ctx context.Context, taskID, reqBody str
 		subTaskChan <- http.StatusNotFound
 		errMsg := errs.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"plugin", target.PluginID}, taskInfo)
+		common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"plugin", target.PluginID}, taskInfo)
 		return
 	}
 	var pluginContactRequest getResourceRequest
@@ -673,7 +673,7 @@ func (e *ExternalInterface) resetSystem(ctx context.Context, taskID, reqBody str
 			subTaskChan <- getResponse.StatusCode
 			errMsg := err.Error()
 			l.LogWithFields(ctx).Error(errMsg)
-			common.GeneralError(ctx, getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo)
+			common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo)
 			return
 		}
 		pluginContactRequest.Token = token
@@ -698,7 +698,7 @@ func (e *ExternalInterface) resetSystem(ctx context.Context, taskID, reqBody str
 		subTaskChan <- getResponse.StatusCode
 		errMsg := err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		common.GeneralError(ctx, getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo)
+		common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo)
 		return
 	}
 	if getResponse.StatusCode == http.StatusAccepted {
@@ -731,10 +731,10 @@ func (e *ExternalInterface) resetSystem(ctx context.Context, taskID, reqBody str
 	percentComplete = 100
 	subTaskChan <- int32(getResponse.StatusCode)
 	var task = fillTaskData(subTaskID, targetURI, reqBody, resp, common.Completed, common.OK, percentComplete, http.MethodPost)
-	err = e.UpdateTask(ctx, task)
+	err = e.UpdateTask(task)
 	if err != nil && err.Error() == common.Cancelling {
 		var task = fillTaskData(subTaskID, targetURI, reqBody, resp, common.Cancelled, common.Critical, percentComplete, http.MethodPost)
-		err = e.UpdateTask(ctx, task)
+		err = e.UpdateTask(task)
 	}
 	if getResponse.StatusCode == http.StatusOK {
 		agmodel.AddSystemResetInfo(element, resetType)
@@ -764,7 +764,7 @@ func (e *ExternalInterface) SetDefaultBootOrderElementsOfAggregate(ctx context.C
 
 	reqBody, err := json.Marshal(req)
 	if err != nil {
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, err.Error(), nil, taskInfo)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, err.Error(), nil, taskInfo)
 	}
 	reqJSON := string(reqBody)
 	taskInfo.TaskRequest = reqJSON
@@ -778,9 +778,9 @@ func (e *ExternalInterface) SetDefaultBootOrderElementsOfAggregate(ctx context.C
 		errorMessage := aggErr.Error()
 		l.LogWithFields(ctx).Error("error getting aggregate : " + errorMessage)
 		if errors.DBKeyNotFound == aggErr.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, aggErr.Error(), []interface{}{"Aggregate", req.URL}, taskInfo)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, aggErr.Error(), []interface{}{"Aggregate", req.URL}, taskInfo)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage, nil, taskInfo)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, taskInfo)
 	}
 
 	partialResultFlag := false
@@ -805,10 +805,10 @@ func (e *ExternalInterface) SetDefaultBootOrderElementsOfAggregate(ctx context.C
 			if i < len(aggregate.Elements)-1 {
 				percentComplete := int32(((i + 1) / len(aggregate.Elements)) * 100)
 				var task = fillTaskData(taskID, targetURI, reqJSON, resp, common.Running, common.OK, percentComplete, http.MethodPost)
-				err := e.UpdateTask(ctx, task)
+				err := e.UpdateTask(task)
 				if err != nil && err.Error() == common.Cancelling {
 					task = fillTaskData(taskID, targetURI, reqJSON, resp, common.Cancelled, common.OK, percentComplete, http.MethodPost)
-					e.UpdateTask(ctx, task)
+					e.UpdateTask(task)
 					runtime.Goexit()
 				}
 
@@ -826,11 +826,11 @@ func (e *ExternalInterface) SetDefaultBootOrderElementsOfAggregate(ctx context.C
 		l.LogWithFields(ctx).Error(errMsg)
 		switch resp.StatusCode {
 		case http.StatusUnauthorized:
-			return common.GeneralError(ctx, http.StatusUnauthorized, response.ResourceAtURIUnauthorized, errMsg, []interface{}{aggregate.Elements}, taskInfo)
+			return common.GeneralError(http.StatusUnauthorized, response.ResourceAtURIUnauthorized, errMsg, []interface{}{aggregate.Elements}, taskInfo)
 		case http.StatusNotFound:
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"option", "SetDefaultBootOrder"}, taskInfo)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"option", "SetDefaultBootOrder"}, taskInfo)
 		default:
-			return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo)
+			return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo)
 		}
 	}
 
@@ -844,10 +844,10 @@ func (e *ExternalInterface) SetDefaultBootOrderElementsOfAggregate(ctx context.C
 	resp.Body = args.CreateGenericErrorResponse()
 
 	var task = fillTaskData(taskID, targetURI, reqJSON, resp, common.Completed, taskStatus, percentComplete, http.MethodPost)
-	err = e.UpdateTask(ctx, task)
+	err = e.UpdateTask(task)
 	if err != nil && err.Error() == common.Cancelling {
 		task = fillTaskData(taskID, targetURI, reqJSON, resp, common.Cancelled, common.Critical, percentComplete, http.MethodPost)
-		e.UpdateTask(ctx, task)
+		e.UpdateTask(task)
 		runtime.Goexit()
 	}
 	return resp

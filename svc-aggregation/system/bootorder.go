@@ -60,13 +60,13 @@ func (e *ExternalInterface) SetDefaultBootOrder(ctx context.Context, taskID stri
 	if err := json.Unmarshal(req.RequestBody, &setOrderReq); err != nil {
 		errMsg := "error while trying to set default boot order: " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo)
 	}
 
 	if len(setOrderReq.Systems) == 0 {
 		errMsg := "error while trying to validate request fields"
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{"Systems"}, taskInfo)
+		return common.GeneralError(http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{"Systems"}, taskInfo)
 	}
 
 	// Validating the request JSON properties for case sensitive
@@ -74,11 +74,11 @@ func (e *ExternalInterface) SetDefaultBootOrder(ctx context.Context, taskID stri
 	if err != nil {
 		errMsg := "error while validating request parameters: " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo)
 	} else if invalidProperties != "" {
 		errorMessage := "error: one or more properties given in the request body are not valid, ensure properties are listed in uppercamelcase "
 		l.LogWithFields(ctx).Error(errorMessage)
-		resp := common.GeneralError(ctx, http.StatusBadRequest, response.PropertyUnknown, errorMessage, []interface{}{invalidProperties}, taskInfo)
+		resp := common.GeneralError(http.StatusBadRequest, response.PropertyUnknown, errorMessage, []interface{}{invalidProperties}, taskInfo)
 		return resp
 	}
 
@@ -104,10 +104,10 @@ func (e *ExternalInterface) SetDefaultBootOrder(ctx context.Context, taskID stri
 			if i < len(setOrderReq.Systems)-1 {
 				percentComplete := int32(((i + 1) / len(setOrderReq.Systems)) * 100)
 				var task = fillTaskData(taskID, targetURI, string(req.RequestBody), resp, common.Running, common.OK, percentComplete, http.MethodPost)
-				err := e.UpdateTask(ctx, task)
+				err := e.UpdateTask(task)
 				if err != nil && err.Error() == common.Cancelling {
 					task = fillTaskData(taskID, targetURI, string(req.RequestBody), resp, common.Cancelled, common.OK, percentComplete, http.MethodPost)
-					e.UpdateTask(ctx, task)
+					e.UpdateTask(task)
 					runtime.Goexit()
 				}
 
@@ -125,11 +125,11 @@ func (e *ExternalInterface) SetDefaultBootOrder(ctx context.Context, taskID stri
 		l.LogWithFields(ctx).Error(errMsg)
 		switch resp.StatusCode {
 		case http.StatusUnauthorized:
-			return common.GeneralError(ctx, http.StatusUnauthorized, response.ResourceAtURIUnauthorized, errMsg, []interface{}{fmt.Sprintf("%v", setOrderReq.Systems)}, taskInfo)
+			return common.GeneralError(http.StatusUnauthorized, response.ResourceAtURIUnauthorized, errMsg, []interface{}{fmt.Sprintf("%v", setOrderReq.Systems)}, taskInfo)
 		case http.StatusNotFound:
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"option", "SetDefaultBootOrder"}, taskInfo)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"option", "SetDefaultBootOrder"}, taskInfo)
 		default:
-			return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo)
+			return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo)
 		}
 	}
 
@@ -143,10 +143,10 @@ func (e *ExternalInterface) SetDefaultBootOrder(ctx context.Context, taskID stri
 	resp.Body = args.CreateGenericErrorResponse()
 
 	var task = fillTaskData(taskID, targetURI, string(req.RequestBody), resp, common.Completed, taskStatus, percentComplete, http.MethodPost)
-	err = e.UpdateTask(ctx, task)
+	err = e.UpdateTask(task)
 	if err != nil && err.Error() == common.Cancelling {
 		task = fillTaskData(taskID, targetURI, string(req.RequestBody), resp, common.Cancelled, common.Critical, percentComplete, http.MethodPost)
-		e.UpdateTask(ctx, task)
+		e.UpdateTask(task)
 		runtime.Goexit()
 	}
 	return resp
@@ -155,7 +155,7 @@ func (e *ExternalInterface) SetDefaultBootOrder(ctx context.Context, taskID stri
 
 func (e *ExternalInterface) collectAndSetDefaultOrder(ctx context.Context, taskID, serverURI, reqJSON string, subTaskChannel chan<- int32, sessionUserName string) {
 	var resp response.RPC
-	subTaskURI, err := e.CreateChildTask(ctx, sessionUserName, taskID)
+	subTaskURI, err := e.CreateChildTask(sessionUserName, taskID)
 	if err != nil {
 		subTaskChannel <- http.StatusInternalServerError
 		l.LogWithFields(ctx).Error("error while trying to create sub task")
@@ -177,7 +177,7 @@ func (e *ExternalInterface) collectAndSetDefaultOrder(ctx context.Context, taskI
 		subTaskChannel <- http.StatusNotFound
 		errMsg := "error while trying to get system ID from " + serverURI + ": " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"SystemID", serverURI}, taskInfo)
+		common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"SystemID", serverURI}, taskInfo)
 		return
 	}
 	// Get target device Credentials from using device UUID
@@ -186,7 +186,7 @@ func (e *ExternalInterface) collectAndSetDefaultOrder(ctx context.Context, taskI
 		subTaskChannel <- http.StatusNotFound
 		errMsg := err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"target", uuid}, taskInfo)
+		common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"target", uuid}, taskInfo)
 		return
 	}
 	decryptedPasswordByte, err := e.DecryptPassword(target.Password)
@@ -194,7 +194,7 @@ func (e *ExternalInterface) collectAndSetDefaultOrder(ctx context.Context, taskI
 		subTaskChannel <- http.StatusInternalServerError
 		errMsg := "error while trying to decrypt device password: " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo)
+		common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo)
 		return
 	}
 	target.Password = decryptedPasswordByte
@@ -205,7 +205,7 @@ func (e *ExternalInterface) collectAndSetDefaultOrder(ctx context.Context, taskI
 		subTaskChannel <- http.StatusNotFound
 		errMsg := "error while getting plugin data: " + errs.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"PluginData", target.PluginID}, taskInfo)
+		common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"PluginData", target.PluginID}, taskInfo)
 		return
 	}
 
@@ -228,7 +228,7 @@ func (e *ExternalInterface) collectAndSetDefaultOrder(ctx context.Context, taskI
 			subTaskChannel <- getResponse.StatusCode
 			errMsg := err.Error()
 			l.LogWithFields(ctx).Error(errMsg)
-			common.GeneralError(ctx, getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo)
+			common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo)
 			return
 		}
 		pluginContactRequest.Token = token
@@ -250,7 +250,7 @@ func (e *ExternalInterface) collectAndSetDefaultOrder(ctx context.Context, taskI
 		subTaskChannel <- getResponse.StatusCode
 		errMsg := err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		common.GeneralError(ctx, getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo)
+		common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo)
 		return
 	}
 	// json.Unmarshal(body, &resp.Body)
@@ -266,10 +266,10 @@ func (e *ExternalInterface) collectAndSetDefaultOrder(ctx context.Context, taskI
 	percentComplete = 100
 	subTaskChannel <- int32(getResponse.StatusCode)
 	var task = fillTaskData(subTaskID, serverURI, reqJSON, resp, common.Completed, common.OK, percentComplete, http.MethodPost)
-	err = e.UpdateTask(ctx, task)
+	err = e.UpdateTask(task)
 	if err != nil && err.Error() == common.Cancelling {
 		var task = fillTaskData(subTaskID, serverURI, reqJSON, resp, common.Cancelled, common.Critical, percentComplete, http.MethodPost)
-		err = e.UpdateTask(ctx, task)
+		err = e.UpdateTask(task)
 	}
 	return
 }

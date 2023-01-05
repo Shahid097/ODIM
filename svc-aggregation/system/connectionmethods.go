@@ -35,7 +35,7 @@ func (e *ExternalInterface) GetAllConnectionMethods(ctx context.Context, req *ag
 	if err != nil {
 		l.LogWithFields(ctx).Error("error getting connection methods : " + err.Error())
 		errorMessage := err.Error()
-		return common.GeneralError(ctx, http.StatusServiceUnavailable, response.CouldNotEstablishConnection, errorMessage, []interface{}{config.Data.DBConf.OnDiskHost + ":" + config.Data.DBConf.OnDiskPort}, nil)
+		return common.GeneralError(http.StatusServiceUnavailable, response.CouldNotEstablishConnection, errorMessage, []interface{}{config.Data.DBConf.OnDiskHost + ":" + config.Data.DBConf.OnDiskPort}, nil)
 	}
 	var members = make([]agresponse.ListMember, 0)
 	for i := 0; i < len(connectionMethods); i++ {
@@ -69,9 +69,9 @@ func (e *ExternalInterface) GetConnectionMethodInfo(ctx context.Context, req *ag
 		l.LogWithFields(ctx).Error("error getting  connectionmethod : " + err.Error())
 		errorMessage := err.Error()
 		if errors.DBKeyNotFound == err.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"ConnectionMethod", req.URL}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"ConnectionMethod", req.URL}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
 	}
 	var data = strings.Split(req.URL, "/redfish/v1/AggregationService/ConnectionMethods/")
 	commonResponse := response.Response{

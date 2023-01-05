@@ -40,9 +40,9 @@ func (e *ExternalInterface) UpdateAggregationSource(ctx context.Context, req *ag
 		l.LogWithFields(ctx).Error("Unable to get AggregationSource : " + dbErr.Error())
 		errorMessage := dbErr.Error()
 		if errors.DBKeyNotFound == dbErr.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errorMessage, []interface{}{"AggregationSource", req.URL}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errorMessage, []interface{}{"AggregationSource", req.URL}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
 	}
 	// parse the request
 	var updateRequest map[string]interface{}
@@ -50,13 +50,13 @@ func (e *ExternalInterface) UpdateAggregationSource(ctx context.Context, req *ag
 	if err != nil {
 		errMsg := "Unable to parse the add request" + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 	if len(updateRequest) <= 0 {
 		param := "HostName UserName Password "
 		errMsg := "field " + param + " Missing"
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{param}, nil)
+		return common.GeneralError(http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{param}, nil)
 	}
 	var param string
 	for key, value := range updateRequest {
@@ -67,7 +67,7 @@ func (e *ExternalInterface) UpdateAggregationSource(ctx context.Context, req *ag
 	if param != "" {
 		errMsg := "field " + param + " Missing"
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{param}, nil)
+		return common.GeneralError(http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{param}, nil)
 	}
 	if _, ok := updateRequest["UserName"]; !ok {
 		updateRequest["UserName"] = aggregationSource.UserName
@@ -80,7 +80,7 @@ func (e *ExternalInterface) UpdateAggregationSource(ctx context.Context, req *ag
 		err := validateManagerAddress(updateRequest["HostName"].(string))
 		if err != nil {
 			l.LogWithFields(ctx).Error(err.Error())
-			return common.GeneralError(ctx, http.StatusBadRequest, response.PropertyValueFormatError, err.Error(), []interface{}{updateRequest["HostName"].(string), "HostName"}, nil)
+			return common.GeneralError(http.StatusBadRequest, response.PropertyValueFormatError, err.Error(), []interface{}{updateRequest["HostName"].(string), "HostName"}, nil)
 
 		}
 		if updateRequest["HostName"].(string) != aggregationSource.HostName {
@@ -92,7 +92,7 @@ func (e *ExternalInterface) UpdateAggregationSource(ctx context.Context, req *ag
 		if err != nil {
 			errMsg := "Unable to decrypt device password: " + err.Error()
 			l.LogWithFields(ctx).Error(errMsg)
-			return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+			return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 		}
 		updateRequest["Password"] = decryptedPasswordByte
 	} else {
@@ -106,11 +106,11 @@ func (e *ExternalInterface) UpdateAggregationSource(ctx context.Context, req *ag
 		if err != nil {
 			errMsg := fmt.Sprintf("Unable to collect the active request details from DB: %v", err.Error())
 			l.LogWithFields(ctx).Println(errMsg)
-			return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+			return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 		}
 		if len(indexList) > 0 {
 			errMsg := fmt.Sprintf("Manager address already exist %v", ipAddr)
-			return common.GeneralError(ctx, http.StatusConflict, response.ResourceAlreadyExists, errMsg, []interface{}{"ComputerSystem", "HostName", ipAddr}, nil)
+			return common.GeneralError(http.StatusConflict, response.ResourceAlreadyExists, errMsg, []interface{}{"ComputerSystem", "HostName", ipAddr}, nil)
 		}
 	}
 	var data = strings.Split(req.URL, "/redfish/v1/AggregationService/AggregationSources/")
@@ -128,7 +128,7 @@ func (e *ExternalInterface) UpdateAggregationSource(ctx context.Context, req *ag
 	if dbErr != nil {
 		errMsg := "error while trying to update aggregation source info: " + dbErr.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 
 	commonResponse := response.Response{
@@ -161,9 +161,9 @@ func (e *ExternalInterface) updateAggregationSourceWithConnectionMethod(ctx cont
 		l.LogWithFields(ctx).Error("Unable to get connectionmethod : " + err.Error())
 		errorMessage := err.Error()
 		if errors.DBKeyNotFound == err.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"ConnectionMethod", connectionMethodOdataID}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"ConnectionMethod", connectionMethodOdataID}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
 	}
 	cmVariants := getConnectionMethodVariants(connectionMethod.ConnectionMethodVariant)
 	var data = strings.Split(url, "/redfish/v1/AggregationService/AggregationSources/")
@@ -181,7 +181,7 @@ func (e *ExternalInterface) updateManagerAggregationSource(ctx context.Context, 
 	if errs != nil {
 		errMsg := errs.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"plugin", pluginID}, nil)
+		return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"plugin", pluginID}, nil)
 	}
 	ipData := strings.Split(updateRequest["HostName"].(string), ":")
 	plugin.IP = ipData[0]
@@ -205,7 +205,7 @@ func (e *ExternalInterface) updateManagerAggregationSource(ctx context.Context, 
 		if err != nil {
 			errMsg := err.Error()
 			l.LogWithFields(ctx).Error(errMsg)
-			return common.GeneralError(ctx, getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
+			return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
 		}
 		pluginContactRequest.Token = token
 	} else {
@@ -222,7 +222,7 @@ func (e *ExternalInterface) updateManagerAggregationSource(ctx context.Context, 
 	if err != nil {
 		errMsg := err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
+		return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
 	}
 	var managerUUID = plugin.ManagerUUID
 	var managersMap map[string]interface{}
@@ -232,14 +232,14 @@ func (e *ExternalInterface) updateManagerAggregationSource(ctx context.Context, 
 	if err != nil {
 		errMsg := err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
+		return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
 	}
 	//  Extract all managers info and loop  over each members
 	err = json.Unmarshal([]byte(body), &managersMap)
 	if err != nil {
 		errMsg := "Unable to parse the managers resposne" + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 
 	if hostNameUpdated {
@@ -252,14 +252,14 @@ func (e *ExternalInterface) updateManagerAggregationSource(ctx context.Context, 
 			if err != nil {
 				errMsg := err.Error()
 				l.LogWithFields(ctx).Error(errMsg)
-				return common.GeneralError(ctx, getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
+				return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
 			}
 			var managerData map[string]interface{}
 			err = json.Unmarshal([]byte(body), &managerData)
 			if err != nil {
 				errMsg := "Unable to parse the managers response" + err.Error()
 				l.LogWithFields(ctx).Error(errMsg)
-				return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+				return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 			}
 			if uuid, ok := managerData["UUID"]; ok {
 				managerUUID = uuid.(string)
@@ -268,7 +268,7 @@ func (e *ExternalInterface) updateManagerAggregationSource(ctx context.Context, 
 		if managerUUID != plugin.ManagerUUID {
 			errMsg := "Manager UUID " + managerUUID + "is not matching plugin UUID: " + plugin.ManagerUUID
 			l.LogWithFields(ctx).Error(errMsg)
-			return common.GeneralError(ctx, http.StatusBadRequest, response.ResourceInUse, errMsg, nil, nil)
+			return common.GeneralError(http.StatusBadRequest, response.ResourceInUse, errMsg, nil, nil)
 		}
 	}
 
@@ -277,7 +277,7 @@ func (e *ExternalInterface) updateManagerAggregationSource(ctx context.Context, 
 	if err != nil {
 		errMsg := "Encryption failed: " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 
 	plugin.Password = ciphertext
@@ -287,7 +287,7 @@ func (e *ExternalInterface) updateManagerAggregationSource(ctx context.Context, 
 	if dbErr != nil {
 		errMsg := "Unable to update plugin info: " + dbErr.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 
 	return response.RPC{
@@ -301,7 +301,7 @@ func (e *ExternalInterface) updateBMCAggregationSource(ctx context.Context, aggr
 	if errs != nil {
 		errMsg := errs.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"plugin", pluginID}, nil)
+		return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"plugin", pluginID}, nil)
 	}
 	var pluginContactRequest getResourceRequest
 	pluginContactRequest.ContactClient = e.ContactClient
@@ -321,7 +321,7 @@ func (e *ExternalInterface) updateBMCAggregationSource(ctx context.Context, aggr
 		if err != nil {
 			errMsg := err.Error()
 			l.LogWithFields(ctx).Error(errMsg)
-			return common.GeneralError(ctx, getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
+			return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
 		}
 		pluginContactRequest.Token = token
 	} else {
@@ -345,7 +345,7 @@ func (e *ExternalInterface) updateBMCAggregationSource(ctx context.Context, aggr
 	if err != nil {
 		errMsg := err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
+		return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
 	}
 
 	var commonError errors.CommonError
@@ -353,7 +353,7 @@ func (e *ExternalInterface) updateBMCAggregationSource(ctx context.Context, aggr
 	if err != nil {
 		errMsg := err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 	if hostNameUpdated {
 		// Get All systems
@@ -363,14 +363,14 @@ func (e *ExternalInterface) updateBMCAggregationSource(ctx context.Context, aggr
 		if err != nil {
 			errMsg := err.Error()
 			l.LogWithFields(ctx).Error(errMsg)
-			return common.GeneralError(ctx, getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
+			return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
 		}
 		var systemsMap map[string]interface{}
 		err = json.Unmarshal([]byte(body), &systemsMap)
 		if err != nil {
 			errMsg := "Unable to unmarshal systems collection: " + err.Error()
 			l.LogWithFields(ctx).Error(errMsg)
-			return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+			return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 		}
 		systemMembers := systemsMap["Members"]
 		for _, object := range systemMembers.([]interface{}) {
@@ -380,14 +380,14 @@ func (e *ExternalInterface) updateBMCAggregationSource(ctx context.Context, aggr
 			if err != nil {
 				errMsg := err.Error()
 				l.LogWithFields(ctx).Error(errMsg)
-				return common.GeneralError(ctx, getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
+				return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, nil)
 			}
 			var computeSystem map[string]interface{}
 			err = json.Unmarshal(body, &computeSystem)
 			if err != nil {
 				errMsg := "Unable to unmarshal computer system: " + err.Error()
 				l.LogWithFields(ctx).Error(errMsg)
-				return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+				return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 			}
 			computeSystemID := computeSystem["Id"].(string)
 			computeSystemUUID := computeSystem["UUID"].(string)
@@ -397,13 +397,13 @@ func (e *ExternalInterface) updateBMCAggregationSource(ctx context.Context, aggr
 			if err != nil {
 				errMsg := "Unable to get computer system index: " + err.Error()
 				l.LogWithFields(ctx).Error(errMsg)
-				return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+				return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 			}
 			l.LogWithFields(ctx).Info("Index List" + strings.Join(indexList, "::"))
 			if len(indexList) <= 0 {
 				errMsg := "UUID of the added bmc is not matching with given HostName"
 				l.LogWithFields(ctx).Error(errMsg)
-				return common.GeneralError(ctx, http.StatusBadRequest, response.ResourceInUse, errMsg, nil, nil)
+				return common.GeneralError(http.StatusBadRequest, response.ResourceInUse, errMsg, nil, nil)
 			}
 			var isPresent bool
 			for _, systemID := range indexList {
@@ -414,13 +414,13 @@ func (e *ExternalInterface) updateBMCAggregationSource(ctx context.Context, aggr
 			if !isPresent {
 				errMsg := "UUID of the added bmc is not matching with given HostName"
 				l.LogWithFields(ctx).Error(errMsg)
-				return common.GeneralError(ctx, http.StatusBadRequest, response.ResourceInUse, errMsg, nil, nil)
+				return common.GeneralError(http.StatusBadRequest, response.ResourceInUse, errMsg, nil, nil)
 			}
 			// updating the index of BMC address
 			err = agmodel.UpdateIndex(map[string]interface{}{}, oidKey, computeSystemUUID, updateRequest["HostName"].(string))
 			if err != nil {
 				errMsg := "error while trying updating index values: " + err.Error()
-				return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+				return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 			}
 		}
 	}
@@ -432,7 +432,7 @@ func (e *ExternalInterface) updateBMCAggregationSource(ctx context.Context, aggr
 	if err != nil {
 		errMsg := "Unable to encrypt device password: " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 	saveSystem.Password = ciphertext
 	updateRequest["Password"] = ciphertext
@@ -440,7 +440,7 @@ func (e *ExternalInterface) updateBMCAggregationSource(ctx context.Context, aggr
 	if dbErr != nil {
 		errMsg := "Unable to update system info: " + dbErr.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 
 	return response.RPC{

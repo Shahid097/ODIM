@@ -40,7 +40,7 @@ func SubscribeToEMB(pluginID string, queueList []string) error {
 }
 
 // DeleteSubscription  calls the event service and delete all subscription realated to that server
-func DeleteSubscription(uuid string) (*eventsproto.EventSubResponse, error) {
+func DeleteSubscription(ctx context.Context, uuid string) (*eventsproto.EventSubResponse, error) {
 	var resp eventsproto.EventSubResponse
 	req := eventsproto.EventRequest{
 		UUID: uuid,
@@ -52,5 +52,5 @@ func DeleteSubscription(uuid string) (*eventsproto.EventSubResponse, error) {
 	defer conn.Close()
 	events := eventsproto.NewEventsClient(conn)
 
-	return events.DeleteEventSubscription(context.TODO(), &req)
+	return events.DeleteEventSubscription(ctx, &req)
 }

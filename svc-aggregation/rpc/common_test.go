@@ -16,6 +16,7 @@ package rpc
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -117,7 +118,7 @@ func deleteSystemforTest(key string) *errors.Error {
 	return nil
 }
 
-func mockDeleteSubscription(uuid string) (*eventsproto.EventSubResponse, error) {
+func mockDeleteSubscription(ctx context.Context, uuid string) (*eventsproto.EventSubResponse, error) {
 	if uuid == "/redfish/v1/systems/delete-subscription-error.1" {
 		return nil, fmt.Errorf("error while trying to delete event subcription")
 	} else if uuid == "/redfish/v1/systems/unexpected-statuscode.1" {
@@ -130,7 +131,7 @@ func mockDeleteSubscription(uuid string) (*eventsproto.EventSubResponse, error) 
 	}, nil
 }
 
-func mockEventNotification(systemID, eventType, collectionType string) {
+func mockEventNotification(ctx context.Context, systemID, eventType, collectionType string) {
 	return
 }
 
@@ -158,22 +159,22 @@ func mockContactClientForDelete(url, method, token string, odataID string, body 
 	return nil, fmt.Errorf("InvalidRequest")
 }
 
-func EventFunctionsForTesting(s []string) {}
+func EventFunctionsForTesting(ctx context.Context, s []string) {}
 
-func PostEventFunctionForTesting(s []string, name string) {}
+func PostEventFunctionForTesting(ctx context.Context, s []string, name string) {}
 
-func GetPluginStatusForTesting(plugin agmodel.Plugin) bool {
+func GetPluginStatusForTesting(ctx context.Context, plugin agmodel.Plugin) bool {
 	return true
 }
 
-func mockIsAuthorized(sessionToken string, privileges, oemPrivileges []string) (response.RPC, error) {
+func mockIsAuthorized(ctx context.Context, sessionToken string, privileges, oemPrivileges []string) (response.RPC, error) {
 	if sessionToken == "invalidToken" {
-		return common.GeneralError(http.StatusUnauthorized, response.NoValidSession, "", nil, nil), nil
+		return common.GeneralError(ctx, http.StatusUnauthorized, response.NoValidSession, "", nil, nil), nil
 	}
-	return common.GeneralError(http.StatusOK, response.Success, "", nil, nil), nil
+	return common.GeneralError(ctx, http.StatusOK, response.Success, "", nil, nil), nil
 }
 
-func getSessionUserNameForTesting(sessionToken string) (string, error) {
+func getSessionUserNameForTesting(ctx context.Context, sessionToken string) (string, error) {
 	if sessionToken == "noDetailsToken" {
 		return "", fmt.Errorf("no details")
 	} else if sessionToken == "noTaskToken" {
@@ -184,7 +185,7 @@ func getSessionUserNameForTesting(sessionToken string) (string, error) {
 	return "someUserName", nil
 }
 
-func createTaskForTesting(sessionUserName string) (string, error) {
+func createTaskForTesting(ctx context.Context, sessionUserName string) (string, error) {
 	if sessionUserName == "noTaskUser" {
 		return "", fmt.Errorf("no details")
 	} else if sessionUserName == "taskWithSlashUser" {
@@ -197,7 +198,7 @@ func mockSubscribeEMB(pluginID string, list []string) error {
 	return nil
 }
 
-func mockCreateChildTask(sessionID, taskID string) (string, error) {
+func mockCreateChildTask(ctx context.Context, sessionID, taskID string) (string, error) {
 	switch taskID {
 	case "taskWithoutChild":
 		return "", fmt.Errorf("subtask cannot created")
@@ -223,7 +224,7 @@ func mockSystemData(systemID string) error {
 	return nil
 }
 
-func mockUpdateTask(task common.TaskData) error {
+func mockUpdateTask(ctx context.Context, task common.TaskData) error {
 	if task.TaskID == "invalid" {
 		return fmt.Errorf(common.Cancelling)
 	}

@@ -28,6 +28,7 @@ package system
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -110,11 +111,11 @@ func mockDeviceData(uuid string, device agmodel.Target) error {
 	return nil
 }
 
-func mockIsAuthorized(sessionToken string, privileges, oemPrivileges []string) (response.RPC, error) {
+func mockIsAuthorized(ctx context.Context, sessionToken string, privileges, oemPrivileges []string) (response.RPC, error) {
 	if sessionToken != "validToken" {
-		return common.GeneralError(http.StatusUnauthorized, response.NoValidSession, "", nil, nil), nil
+		return common.GeneralError(ctx, http.StatusUnauthorized, response.NoValidSession, "", nil, nil), nil
 	}
-	return common.GeneralError(http.StatusOK, response.Success, "", nil, nil), nil
+	return common.GeneralError(ctx, http.StatusOK, response.Success, "", nil, nil), nil
 }
 
 func mockContactClient(url, method, token string, odataID string, body interface{}, credentials map[string]string) (*http.Response, error) {
@@ -663,9 +664,10 @@ func TestPluginContact_ResetComputerSystem(t *testing.T) {
 			},
 		},
 	}
+	ctx := mockContext()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.p.Reset(tt.args.taskID, tt.args.sessionUserName, tt.args.req); !reflect.DeepEqual(got.StatusCode, tt.want.StatusCode) {
+			if got := tt.p.Reset(ctx, tt.args.taskID, tt.args.sessionUserName, tt.args.req); !reflect.DeepEqual(got.StatusCode, tt.want.StatusCode) {
 				t.Errorf("ExternalInterface.Reset() = %v, want %v", got, tt.want)
 			}
 		})

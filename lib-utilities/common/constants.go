@@ -161,20 +161,32 @@ const (
 	ActionID      = "actionid"
 	ProcessName   = "processname"
 	// Below fields define Service Name
-	ManagerService = "svc-managers"
-	AccountService = "svc-account"
-	SystemService  = "svc-systems"
-	SessionService = "svc-account-session"
-	ApiService     = "svc-api"
+	ManagerService     = "svc-managers"
+	AccountService     = "svc-account"
+	SystemService      = "svc-systems"
+	SessionService     = "svc-account-session"
+	ApiService         = "svc-api"
+	AggregationService = "svc-aggregation"
 	// DefaultThreadID to be used for apis
 	DefaultThreadID = "0"
 	// Invalid Action
 	InvalidActionID   = "000"
 	InvalidActionName = "MethodNotAllowed"
 	// ThreadName
-	CheckAuth            = "Check-Authentication"
-	CheckSessionCreation = "CheckSessionCreationCredentials"
-	CheckSessionTimeout  = "CheckSessionTimeOut"
+	CheckAuth                              = "Check-Authentication"
+	CheckSessionCreation                   = "CheckSessionCreationCredentials"
+	CheckSessionTimeout                    = "CheckSessionTimeOut"
+	ResetAggregates                        = "Reset-Aggregates"
+	ResetAggregate                         = "Reset-Aggregate"
+	SetBootOrder                           = "SettingBootOrder"
+	CollectAndSetDefaultBootOrder          = "CollectAndSetDefaultBoorOrder"
+	AddAggregationSource                   = "AddingAggregationSource"
+	DeleteAggregationSource                = "DeleteAggregationSource"
+	SubTaskStatusUpdate                    = "SubTaskStatusUpdate"
+	ResetSystem                            = "ResetSystem"
+	SetDefaultBootOrderElementsOfAggregate = "SetDefaultBootOrderElementsOfAggregate"
+	RediscoverSystemInventory              = "RediscoverSystemInventory"
+	CheckPluginStatus                      = "CheckPluginStatus"
 )
 
 // ActionType defines type of action

@@ -30,7 +30,7 @@ import (
 // As parameters session token, privileges and oem privileges are passed.
 // A RPC call is made with these parameters to the Account-Session service
 // to check whether the session is valid and have all the privileges which are passed to it.
-func IsAuthorized(ctx context.Context, sessionToken string, privileges, oemPrivileges []string) (errResponse.RPC, error) {
+func IsAuthorized(sessionToken string, privileges, oemPrivileges []string) (errResponse.RPC, error) {
 	conn, err := ODIMService.Client(AccountSession)
 	if err != nil {
 		errMsg := fmt.Sprintf("Failed to create client connection: %v", err)
@@ -39,7 +39,7 @@ func IsAuthorized(ctx context.Context, sessionToken string, privileges, oemPrivi
 	defer conn.Close()
 	asService := authproto.NewAuthorizationClient(conn)
 	response, err := asService.IsAuthorized(
-		ctx,
+		context.TODO(),
 		&authproto.AuthRequest{
 			SessionToken:  sessionToken,
 			Privileges:    privileges,
@@ -58,7 +58,7 @@ func IsAuthorized(ctx context.Context, sessionToken string, privileges, oemPrivi
 }
 
 // GetSessionUserName will get user name from the session token by rpc call to account-session service
-func GetSessionUserName(ctx context.Context, sessionToken string) (string, error) {
+func GetSessionUserName(sessionToken string) (string, error) {
 	conn, err := ODIMService.Client(AccountSession)
 	if err != nil {
 		return "", fmt.Errorf("Failed to create client connection: %v", err)
@@ -66,7 +66,7 @@ func GetSessionUserName(ctx context.Context, sessionToken string) (string, error
 	defer conn.Close()
 	asService := sessionproto.NewSessionClient(conn)
 	response, err := asService.GetSessionUserName(
-		ctx,
+		context.TODO(),
 		&sessionproto.SessionRequest{
 			SessionToken: sessionToken,
 		},

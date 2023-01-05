@@ -47,7 +47,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 	if errs != nil {
 		errMsg := "error while getting plugin data: " + errs.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"plugin", pluginID}, taskInfo), "", nil
+		return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"plugin", pluginID}, taskInfo), "", nil
 	}
 
 	var saveSystem agmodel.SaveSystem
@@ -71,7 +71,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 		if err != nil {
 			errMsg := err.Error()
 			l.LogWithFields(ctx).Error(errMsg)
-			return common.GeneralError(ctx, getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo), "", nil
+			return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo), "", nil
 		}
 		pluginContactRequest.Token = token
 	} else {
@@ -90,7 +90,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 	if err != nil {
 		errMsg := err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo), "", nil
+		return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo), "", nil
 	}
 
 	var commonError errors.CommonError
@@ -98,7 +98,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 	if err != nil {
 		errMsg := err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo), "", nil
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo), "", nil
 	}
 
 	commonError.Error.Code = errors.PropertyValueFormatError
@@ -145,12 +145,12 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 		}
 		if !skipFlag {
 			go e.rollbackInMemory(resourceURI)
-			return common.GeneralError(ctx, h.StatusCode, h.StatusMessage, errMsg, msgArg, taskInfo), "", nil
+			return common.GeneralError(h.StatusCode, h.StatusMessage, errMsg, msgArg, taskInfo), "", nil
 		}
 	}
 	percentComplete = progress
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
-	e.UpdateTask(ctx, task)
+	e.UpdateTask(task)
 	h.InventoryData = make(map[string]interface{})
 
 	// Populate the resource Firmware inventory for update service
@@ -164,7 +164,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 	progress = h.getAllRootInfo(ctx, taskID, progress, firmwareEstimatedWork, pluginContactRequest, config.Data.AddComputeSkipResources.SkipResourceListUnderOthers)
 	percentComplete = progress
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
-	e.UpdateTask(ctx, task)
+	e.UpdateTask(task)
 
 	// Populate the resource Software inventory for update service
 	pluginContactRequest.DeviceInfo = getSystemBody
@@ -177,7 +177,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 	progress = h.getAllRootInfo(ctx, taskID, progress, softwareEstimatedWork, pluginContactRequest, config.Data.AddComputeSkipResources.SkipResourceListUnderOthers)
 	percentComplete = progress
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
-	e.UpdateTask(ctx, task)
+	e.UpdateTask(task)
 
 	// Discover telemetry service
 	percentComplete = e.getTelemetryService(ctx, taskID, targetURI, percentComplete, pluginContactRequest, resp, saveSystem)
@@ -193,7 +193,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 	progress = h.getAllRootInfo(ctx, taskID, progress, licenseEstimatedWork, pluginContactRequest, config.Data.AddComputeSkipResources.SkipResourceListUnderOthers)
 	percentComplete = progress
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
-	e.UpdateTask(ctx, task)
+	e.UpdateTask(task)
 
 	// Lets Discover/gather registry files of this server and store them in DB
 
@@ -207,7 +207,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 	progress = h.getAllRegistries(ctx, taskID, progress, registriesEstimatedWork, pluginContactRequest)
 	percentComplete = progress
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
-	err = e.UpdateTask(ctx, task)
+	err = e.UpdateTask(task)
 	if err != nil && (err.Error() == common.Cancelling) {
 		go e.rollbackInMemory(resourceURI)
 		return resp, "", nil
@@ -233,7 +233,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 
 	percentComplete = progress
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
-	err = e.UpdateTask(ctx, task)
+	err = e.UpdateTask(task)
 	if err != nil && (err.Error() == common.Cancelling) {
 		go e.rollbackInMemory(resourceURI)
 		return resp, "", nil
@@ -262,11 +262,11 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 	if err != nil {
 		errorMessage := "GenericSave : error while trying to add resource date to DB: " + err.Error()
 		l.LogWithFields(ctx).Error(errorMessage)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage,
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
 			nil, nil), "", nil
 	}
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
-	err = e.UpdateTask(ctx, task)
+	err = e.UpdateTask(task)
 	if err != nil && (err.Error() == common.Cancelling) {
 		go e.rollbackInMemory(resourceURI)
 		return resp, "", nil
@@ -274,7 +274,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 	if h.ErrorMessage != "" && h.StatusCode != http.StatusServiceUnavailable && h.StatusCode != http.StatusNotFound && h.StatusCode != http.StatusInternalServerError && h.StatusCode != http.StatusBadRequest {
 		go e.rollbackInMemory(resourceURI)
 		l.LogWithFields(ctx).Error(h.ErrorMessage)
-		return common.GeneralError(ctx, h.StatusCode, h.StatusMessage, h.ErrorMessage, h.MsgArgs, taskInfo), "", nil
+		return common.GeneralError(h.StatusCode, h.StatusMessage, h.ErrorMessage, h.MsgArgs, taskInfo), "", nil
 	}
 
 	ciphertext, err := e.EncryptPassword([]byte(addResourceRequest.Password))
@@ -282,7 +282,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 		go e.rollbackInMemory(resourceURI)
 		errMsg := "error while trying to encrypt: " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo), "", nil
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo), "", nil
 	}
 	saveSystem.Password = ciphertext
 	aggregationSourceID := saveSystem.DeviceUUID + "." + computeSystemID
@@ -290,7 +290,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 		go e.rollbackInMemory(resourceURI)
 		errMsg := "error while trying to add compute: " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo), "", nil
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo), "", nil
 	}
 	aggSourceIDChassisAndManager := saveSystem.DeviceUUID + "."
 	chassisList, _ := agmodel.GetAllMatchingDetails("Chassis", aggSourceIDChassisAndManager, common.InMemory)
@@ -342,7 +342,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 	if jerr != nil {
 		errorMessage := "error getting manager details: " + jerr.Error()
 		l.LogWithFields(ctx).Error(errorMessage)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage,
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
 			nil, nil), "", nil
 	}
 
@@ -350,7 +350,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 	if err != nil {
 		errorMessage := "error unmarshalling manager details: " + err.Error()
 		l.LogWithFields(ctx).Error(errorMessage)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage,
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
 			nil, nil), "", nil
 	}
 
@@ -383,14 +383,14 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 	if err != nil {
 		errorMessage := "unable to marshal data while updating managers detail: " + err.Error()
 		l.LogWithFields(ctx).Error(errorMessage)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage,
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
 			nil, nil), "", nil
 	}
 	err = agmodel.GenericSave([]byte(mgrData), "Managers", managerURI)
 	if err != nil {
 		errorMessage := "GenericSave : error while trying to add resource date to DB: " + err.Error()
 		l.LogWithFields(ctx).Error(errorMessage)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage,
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
 			nil, nil), "", nil
 	}
 

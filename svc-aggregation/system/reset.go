@@ -77,13 +77,13 @@ func (e *ExternalInterface) Reset(ctx context.Context, taskID string, sessionUse
 	if err := json.Unmarshal(req.RequestBody, &resetRequest); err != nil {
 		errMsg := "Unable to validate request fields: " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusBadRequest, response.MalformedJSON, errMsg, nil, taskInfo)
+		return common.GeneralError(http.StatusBadRequest, response.MalformedJSON, errMsg, nil, taskInfo)
 	}
 	missedProperty, err := resetRequest.validateResetRequestFields(req.RequestBody)
 	if err != nil {
 		errMsg := "Unable to validate request fields: " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{missedProperty}, taskInfo)
+		return common.GeneralError(http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{missedProperty}, taskInfo)
 	}
 
 	// Validating the request JSON properties for case sensitive
@@ -91,11 +91,11 @@ func (e *ExternalInterface) Reset(ctx context.Context, taskID string, sessionUse
 	if err != nil {
 		errMsg := "Unable to validate request fields: " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo)
 	} else if invalidProperties != "" {
 		errorMessage := "One or more properties given in the request body are not valid, ensure properties are listed in uppercamelcase "
 		l.LogWithFields(ctx).Error(errorMessage)
-		resp := common.GeneralError(ctx, http.StatusBadRequest, response.PropertyUnknown, errorMessage, []interface{}{invalidProperties}, taskInfo)
+		resp := common.GeneralError(http.StatusBadRequest, response.PropertyUnknown, errorMessage, []interface{}{invalidProperties}, taskInfo)
 		return resp
 	}
 	// subTaskChan is a buffered channel with buffer size equal to total number of resources.
@@ -124,10 +124,10 @@ func (e *ExternalInterface) Reset(ctx context.Context, taskID string, sessionUse
 					if i < len(resetRequest.TargetURIs)-1 {
 						percentComplete = int32(((i + 1) / len(resetRequest.TargetURIs)) * 100)
 						var task = fillTaskData(taskID, targetURI, string(req.RequestBody), resp, common.Running, common.OK, percentComplete, http.MethodPost)
-						err := e.UpdateTask(ctxt, task)
+						err := e.UpdateTask(task)
 						if err != nil && err.Error() == common.Cancelling {
 							task = fillTaskData(taskID, targetURI, string(req.RequestBody), resp, common.Cancelled, common.OK, percentComplete, http.MethodPost)
-							e.UpdateTask(ctxt, task)
+							e.UpdateTask(task)
 							cancelled = true
 						}
 					}
@@ -173,7 +173,7 @@ func (e *ExternalInterface) Reset(ctx context.Context, taskID string, sessionUse
 	if resp.StatusCode != http.StatusOK {
 		errMsg := "one or more of the reset actions failed. for more information please check SubTasks in URI: /redfish/v1/TaskService/Tasks/" + taskID
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, resp.StatusCode, resp.StatusMessage, errMsg, nil, taskInfo)
+		return common.GeneralError(resp.StatusCode, resp.StatusMessage, errMsg, nil, taskInfo)
 	}
 
 	l.LogWithFields(ctx).Info("All reset actions are successfully completed. for more information please check SubTasks in URI: /redfish/v1/TaskService/Tasks/" + taskID)
@@ -185,10 +185,10 @@ func (e *ExternalInterface) Reset(ctx context.Context, taskID string, sessionUse
 	}
 	resp.Body = args.CreateGenericErrorResponse()
 	var task = fillTaskData(taskID, targetURI, string(req.RequestBody), resp, common.Completed, taskStatus, percentComplete, http.MethodPost)
-	err = e.UpdateTask(ctx, task)
+	err = e.UpdateTask(task)
 	if err != nil && err.Error() == common.Cancelling {
 		task = fillTaskData(taskID, targetURI, string(req.RequestBody), resp, common.Cancelled, common.Critical, percentComplete, http.MethodPost)
-		e.UpdateTask(ctx, task)
+		e.UpdateTask(task)
 		runtime.Goexit()
 	}
 	return resp
@@ -197,7 +197,7 @@ func (e *ExternalInterface) aggregateSystems(ctx context.Context, requestType, u
 	var resp response.RPC
 	var percentComplete int32
 	defer wg.Done()
-	subTaskURI, err := e.CreateChildTask(ctx, sessionUserName, taskID)
+	subTaskURI, err := e.CreateChildTask(sessionUserName, taskID)
 	if err != nil {
 		subTaskChan <- http.StatusInternalServerError
 		l.LogWithFields(ctx).Error("error while trying to create sub task")
@@ -219,13 +219,13 @@ func (e *ExternalInterface) aggregateSystems(ctx context.Context, requestType, u
 		if errors.DBKeyNotFound == err1.ErrNo() {
 			subTaskChan <- http.StatusNotFound
 			resp.StatusCode = http.StatusNotFound
-			common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errorMessage, []interface{}{"Aggregate", url}, taskInfo)
+			common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errorMessage, []interface{}{"Aggregate", url}, taskInfo)
 			return
 		}
 
 		subTaskChan <- http.StatusInternalServerError
 		resp.StatusCode = http.StatusInternalServerError
-		common.GeneralError(ctx, http.StatusInternalServerError, response.ResourceNotFound, errorMessage, []interface{}{"Aggregate", url}, taskInfo)
+		common.GeneralError(http.StatusInternalServerError, response.ResourceNotFound, errorMessage, []interface{}{"Aggregate", url}, taskInfo)
 		return
 	}
 
@@ -255,10 +255,10 @@ func (e *ExternalInterface) aggregateSystems(ctx context.Context, requestType, u
 					if i < len(aggregate.Elements)-1 {
 						percentComplete = int32(((i + 1) / len(aggregate.Elements)) * 100)
 						var task = fillTaskData(subTaskID, url, reqBody, resp, common.Running, common.OK, percentComplete, http.MethodPost)
-						err := e.UpdateTask(ctxt, task)
+						err := e.UpdateTask(task)
 						if err != nil && err.Error() == common.Cancelling {
 							task = fillTaskData(subTaskID, url, reqBody, resp, common.Cancelled, common.OK, percentComplete, http.MethodPost)
-							e.UpdateTask(ctxt, task)
+							e.UpdateTask(task)
 							cancelled = true
 						}
 					}
@@ -289,7 +289,7 @@ func (e *ExternalInterface) aggregateSystems(ctx context.Context, requestType, u
 	var args response.Args
 	if resp.StatusCode != http.StatusOK {
 		subTaskChan <- resp.StatusCode
-		common.GeneralError(ctx, resp.StatusCode, resp.StatusMessage, "", []interface{}{"Aggregate", url}, taskInfo)
+		common.GeneralError(resp.StatusCode, resp.StatusMessage, "", []interface{}{"Aggregate", url}, taskInfo)
 		return
 	}
 
@@ -301,9 +301,9 @@ func (e *ExternalInterface) aggregateSystems(ctx context.Context, requestType, u
 	}
 	resp.Body = args.CreateGenericErrorResponse()
 	var task = fillTaskData(subTaskID, url, reqBody, resp, common.Completed, taskStatus, percentComplete, http.MethodPost)
-	err = e.UpdateTask(ctx, task)
+	err = e.UpdateTask(task)
 	if err != nil && err.Error() == common.Cancelling {
-		common.GeneralError(ctx, http.StatusNotFound, common.Cancelled, "", []interface{}{"Aggregate", url}, taskInfo)
+		common.GeneralError(http.StatusNotFound, common.Cancelled, "", []interface{}{"Aggregate", url}, taskInfo)
 		return
 
 	}

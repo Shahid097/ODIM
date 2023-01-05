@@ -40,9 +40,9 @@ func (e *ExternalInterface) DeleteAggregationSource(ctx context.Context, req *ag
 		errorMessage := dbErr.Error()
 		l.LogWithFields(ctx).Error("Unable to get AggregationSource : " + errorMessage)
 		if errors.DBKeyNotFound == dbErr.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errorMessage, []interface{}{"AggregationSource", req.URL}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errorMessage, []interface{}{"AggregationSource", req.URL}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
 	}
 	// check whether the aggregation source is bmc or manager
 	links := aggregationSource.Links.(map[string]interface{})
@@ -53,9 +53,9 @@ func (e *ExternalInterface) DeleteAggregationSource(ctx context.Context, req *ag
 		errorMessage := err.Error()
 		l.LogWithFields(ctx).Error("Unable to get connectionmethod : " + errorMessage)
 		if errors.DBKeyNotFound == err.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"ConnectionMethod", connectionMethodOdataID}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, err.Error(), []interface{}{"ConnectionMethod", connectionMethodOdataID}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
 	}
 
 	requestData := strings.SplitN(req.URL, ".", 2)
@@ -67,14 +67,14 @@ func (e *ExternalInterface) DeleteAggregationSource(ctx context.Context, req *ag
 		if len(connectionMethod.Links.AggregationSources) > 1 {
 			errMsg := fmt.Sprintf("Plugin " + cmVariants.PluginID + " can't be removed since it managing devices")
 			l.LogWithFields(ctx).Info(errMsg)
-			return common.GeneralError(ctx, http.StatusNotAcceptable, response.ResourceCannotBeDeleted, errMsg, nil, nil)
+			return common.GeneralError(http.StatusNotAcceptable, response.ResourceCannotBeDeleted, errMsg, nil, nil)
 		}
 		// Get the plugin
 		plugin, errs := agmodel.GetPluginData(cmVariants.PluginID)
 		if errs != nil {
 			errMsg := errs.Error()
 			l.LogWithFields(ctx).Error(errMsg)
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"plugin", cmVariants.PluginID}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"plugin", cmVariants.PluginID}, nil)
 		}
 		// delete the manager
 		resp = e.deletePlugin(ctx, "/redfish/v1/Managers/"+plugin.ManagerUUID)
@@ -85,9 +85,9 @@ func (e *ExternalInterface) DeleteAggregationSource(ctx context.Context, req *ag
 			errMsg := dbErr.Error()
 			l.LogWithFields(ctx).Error(errMsg)
 			if errors.DBKeyNotFound == dbErr.ErrNo() {
-				return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"Systems", "everything"}, nil)
+				return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"Systems", "everything"}, nil)
 			}
-			return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+			return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 		}
 		for _, systemURI := range systemList {
 			index := strings.LastIndexAny(systemURI, "/")
@@ -103,7 +103,7 @@ func (e *ExternalInterface) DeleteAggregationSource(ctx context.Context, req *ag
 		plugin, errs := agmodel.GetPluginData(target.PluginID)
 		if errs != nil {
 			l.LogWithFields(ctx).Error("failed to get " + target.PluginID + " plugin info: " + errs.Error())
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errs.Error(), []interface{}{"plugin", target.PluginID}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errs.Error(), []interface{}{"plugin", target.PluginID}, nil)
 		}
 		pluginStartUpData := &agmodel.PluginStartUpData{
 			RequestType: "delta",
@@ -131,7 +131,7 @@ func (e *ExternalInterface) DeleteAggregationSource(ctx context.Context, req *ag
 	if dbErr != nil {
 		errMsg := dbErr.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 
 	resp = response.RPC{
@@ -188,9 +188,9 @@ func (e *ExternalInterface) deletePlugin(ctx context.Context, oid string) respon
 		errMsg := "error while getting Managers data: " + derr.Error()
 		l.LogWithFields(ctx).Error(errMsg)
 		if errors.DBKeyNotFound == derr.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"Managers", oid}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"Managers", oid}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 	var resource map[string]interface{}
 	json.Unmarshal([]byte(data), &resource)
@@ -199,7 +199,7 @@ func (e *ExternalInterface) deletePlugin(ctx context.Context, oid string) respon
 	if errs != nil {
 		errMsg := "error while getting plugin data: " + errs.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"Plugin", pluginID}, nil)
+		return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"Plugin", pluginID}, nil)
 	}
 
 	systems, dberr := agmodel.GetAllSystems()
@@ -207,9 +207,9 @@ func (e *ExternalInterface) deletePlugin(ctx context.Context, oid string) respon
 		errMsg := derr.Error()
 		l.LogWithFields(ctx).Error(errMsg)
 		if errors.DBKeyNotFound == derr.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"Systems", "everything"}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"Systems", "everything"}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 	// verifying if any device is mapped to plugin
 	var systemCnt = 0
@@ -221,7 +221,7 @@ func (e *ExternalInterface) deletePlugin(ctx context.Context, oid string) respon
 	if systemCnt > 0 {
 		errMsg := fmt.Sprintf("error: plugin %v can't be removed since it managing some of the devices", pluginID)
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusNotAcceptable, response.ResourceCannotBeDeleted, errMsg, nil, nil)
+		return common.GeneralError(http.StatusNotAcceptable, response.ResourceCannotBeDeleted, errMsg, nil, nil)
 	}
 
 	// verifying if plugin is up
@@ -240,7 +240,7 @@ func (e *ExternalInterface) deletePlugin(ctx context.Context, oid string) respon
 	if err == nil { // no err means plugin is still up, so we can't remove it
 		errMsg := "error: plugin is still up, so it cannot be removed."
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusNotAcceptable, response.ResourceCannotBeDeleted, errMsg, nil, nil)
+		return common.GeneralError(http.StatusNotAcceptable, response.ResourceCannotBeDeleted, errMsg, nil, nil)
 	}
 
 	// deleting the manager info
@@ -249,9 +249,9 @@ func (e *ExternalInterface) deletePlugin(ctx context.Context, oid string) respon
 		errMsg := derr.Error()
 		l.LogWithFields(ctx).Error(errMsg)
 		if errors.DBKeyNotFound == derr.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"Managers", oid}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"Managers", oid}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 
 	//deleting logservice empty collection
@@ -262,9 +262,9 @@ func (e *ExternalInterface) deletePlugin(ctx context.Context, oid string) respon
 			errMsg := derr.Error()
 			l.LogWithFields(ctx).Error(errMsg)
 			if errors.DBKeyNotFound == derr.ErrNo() {
-				return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"LogServiceCollection", lkey}, nil)
+				return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"LogServiceCollection", lkey}, nil)
 			}
-			return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+			return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 		}
 		SLKey := oid + "/LogServices/SL"
 		dberr = agmodel.DeleteManagersData(SLKey, LogServices)
@@ -272,9 +272,9 @@ func (e *ExternalInterface) deletePlugin(ctx context.Context, oid string) respon
 			errMsg := derr.Error()
 			l.LogWithFields(ctx).Error(errMsg)
 			if errors.DBKeyNotFound == derr.ErrNo() {
-				return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"LogServices", lkey}, nil)
+				return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"LogServices", lkey}, nil)
 			}
-			return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+			return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 		}
 		logEntriesKey := oid + "/LogServices/SL/Entries"
 		dberr = agmodel.DeleteManagersData(logEntriesKey, EntriesCollection)
@@ -282,9 +282,9 @@ func (e *ExternalInterface) deletePlugin(ctx context.Context, oid string) respon
 			errMsg := derr.Error()
 			l.LogWithFields(ctx).Error(errMsg)
 			if errors.DBKeyNotFound == derr.ErrNo() {
-				return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"EntriesCollection", lkey}, nil)
+				return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"EntriesCollection", lkey}, nil)
 			}
-			return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+			return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 		}
 	}
 	// deleting the plugin if  zero devices are managed
@@ -293,9 +293,9 @@ func (e *ExternalInterface) deletePlugin(ctx context.Context, oid string) respon
 		errMsg := derr.Error()
 		l.LogWithFields(ctx).Error(errMsg)
 		if errors.DBKeyNotFound == derr.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"Plugin", pluginID}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"Plugin", pluginID}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 	e.EventNotification(ctx, oid, "ResourceRemoved", "ManagerCollection")
 	resp.StatusCode = http.StatusOK
@@ -316,13 +316,13 @@ func (e *ExternalInterface) deleteCompute(ctx context.Context, key string, index
 	if dbErr != nil && errors.DBKeyNotFound != dbErr.ErrNo() {
 		l.LogWithFields(ctx).Error(" Delete operation for system  " + key + " can't be processed " + dbErr.Error())
 		errMsg := "error while trying to delete compute system: " + dbErr.Error()
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 	if systemOperation.Operation != "" {
 		l.LogWithFields(ctx).Error("Delete operation or system  " + key + " can't be processed," +
 			systemOperation.Operation + " operation  is under progress")
 		errMsg := systemOperation.Operation + " operation  is under progress"
-		return common.GeneralError(ctx, http.StatusNotAcceptable, response.ResourceCannotBeDeleted, errMsg, nil, nil)
+		return common.GeneralError(http.StatusNotAcceptable, response.ResourceCannotBeDeleted, errMsg, nil, nil)
 	}
 	// Get the plugin
 	var managerData map[string]interface{}
@@ -330,7 +330,7 @@ func (e *ExternalInterface) deleteCompute(ctx context.Context, key string, index
 	if errs != nil {
 		errMsg := errs.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"plugin", pluginID}, nil)
+		return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"plugin", pluginID}, nil)
 	}
 
 	managerURI := "/redfish/v1/Managers/" + plugin.ManagerUUID
@@ -338,7 +338,7 @@ func (e *ExternalInterface) deleteCompute(ctx context.Context, key string, index
 	if jerr != nil {
 		errorMessage := "error while getting manager details: " + jerr.Error()
 		l.LogWithFields(ctx).Error(errorMessage)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage,
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
 			nil, nil)
 	}
 
@@ -346,7 +346,7 @@ func (e *ExternalInterface) deleteCompute(ctx context.Context, key string, index
 	if unmarshallErr != nil {
 		errorMessage := "error unmarshalling manager details: " + unmarshallErr.Error()
 		l.LogWithFields(ctx).Error(errorMessage)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage,
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
 			nil, nil)
 	}
 	systemOperation.Operation = "Delete"
@@ -354,7 +354,7 @@ func (e *ExternalInterface) deleteCompute(ctx context.Context, key string, index
 	if dbErr != nil {
 		l.LogWithFields(ctx).Error(" Delete operation for system  " + key + " can't be processed " + dbErr.Error())
 		errMsg := "error while trying to delete compute system: " + dbErr.Error()
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 	defer func() {
 		if err := agmodel.DeleteSystemOperationInfo(strings.TrimSuffix(key, "/")); err != nil {
@@ -362,11 +362,11 @@ func (e *ExternalInterface) deleteCompute(ctx context.Context, key string, index
 		}
 	}()
 	// Delete Subscription on odimra and also on device
-	subResponse, err := e.DeleteEventSubscription(ctx, key)
+	subResponse, err := e.DeleteEventSubscription(key)
 	if err != nil && subResponse == nil {
 		errMsg := fmt.Sprintf("error while trying to delete subscriptions: %v", err)
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 	// If the DeleteEventSubscription call return status code other than http.StatusNoContent, http.StatusNotFound.
 	//Then return with error(delete event subscription failed).
@@ -390,13 +390,13 @@ func (e *ExternalInterface) deleteCompute(ctx context.Context, key string, index
 	if marshalErr != nil {
 		errorMessage := "unable to marshal data for updating: " + marshalErr.Error()
 		l.LogWithFields(ctx).Error(errorMessage)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
 	}
 	genericErr := agmodel.GenericSave([]byte(data), "Managers", managerURI)
 	if genericErr != nil {
 		errorMessage := "GenericSave : error while trying to add resource date to DB: " + genericErr.Error()
 		l.LogWithFields(ctx).Error(errorMessage)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage, nil, nil)
 	}
 
 	// Delete Compute System Details from InMemory
@@ -404,9 +404,9 @@ func (e *ExternalInterface) deleteCompute(ctx context.Context, key string, index
 		errMsg := "error while trying to delete compute system: " + derr.Error()
 		l.LogWithFields(ctx).Error(errMsg)
 		if errors.DBKeyNotFound == derr.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{index, key}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{index, key}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 
 	// Split the key by : (uuid.1) so we will get [uuid 1]
@@ -414,7 +414,7 @@ func (e *ExternalInterface) deleteCompute(ctx context.Context, key string, index
 	if len(k) < 2 {
 		errMsg := fmt.Sprintf("key %v doesn't have system details", key)
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 	uuid := k[0]
 	// Delete System Details from OnDisk
@@ -422,9 +422,9 @@ func (e *ExternalInterface) deleteCompute(ctx context.Context, key string, index
 		errMsg := "error while trying to delete system: " + derr.Error()
 		l.LogWithFields(ctx).Error(errMsg)
 		if errors.DBKeyNotFound == derr.ErrNo() {
-			return common.GeneralError(ctx, http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"System", uuid}, nil)
+			return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"System", uuid}, nil)
 		}
-		return common.GeneralError(ctx, http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil)
 	}
 	e.deleteWildCardValues(ctx, key[index+1:])
 

@@ -201,10 +201,10 @@ func (e *ExternalInterface) RediscoverResources() error {
 	if config.Data.ServerRediscoveryBatchSize <= 0 {
 		serverBatchSize = 1
 	}
-	threadIDFromCtx := ctx.Value("threadid").(int)
-	threadID := threadIDFromCtx + 1
+	threadID := 1
 	ctxt := context.WithValue(ctx, common.ThreadName, common.RediscoverResources)
 	ctxt = context.WithValue(ctxt, common.ThreadID, strconv.Itoa(threadID))
+	threadID++
 	var semaphoreChan = make(chan int, serverBatchSize)
 	for index := range targets {
 		semaphoreChan <- 1

@@ -168,7 +168,6 @@ func (a *Aggregator) Reset(ctx context.Context, req *aggregatorproto.AggregatorR
 		return resp, nil
 	}
 	taskID := strings.TrimPrefix(taskURI, "/redfish/v1/TaskService/Tasks/")
-
 	ctxt := context.WithValue(ctx, common.ThreadName, common.ResetAggregate)
 	ctxt = context.WithValue(ctxt, common.ThreadID, strconv.Itoa(threadID))
 	go a.reset(ctxt, taskID, sessionUserName, req)
@@ -297,14 +296,14 @@ func (a *Aggregator) SetDefaultBootOrder(ctx context.Context, req *aggregatorpro
 // RPC according to the protoc file defined in the lib-utilities package.
 func (a *Aggregator) RediscoverSystemInventory(ctx context.Context, req *aggregatorproto.RediscoverSystemInventoryRequest) (
 	*aggregatorproto.RediscoverSystemInventoryResponse, error) {
+	resp := &aggregatorproto.RediscoverSystemInventoryResponse{}
 	var threadID int = 1
 	ctx = common.GetContextData(ctx)
 	ctx = context.WithValue(ctx, common.ThreadName, common.RediscoverSystemInventory)
 	ctx = context.WithValue(ctx, common.ProcessName, podName)
 	ctx = context.WithValue(ctx, common.ThreadID, threadID)
-	threadID++
-	resp := &aggregatorproto.RediscoverSystemInventoryResponse{}
 	go a.connector.RediscoverSystemInventory(ctx, req.SystemID, req.SystemURL, true)
+	threadID++
 	return resp, nil
 
 }
@@ -389,11 +388,11 @@ func (a *Aggregator) AddAggregationSource(ctx context.Context, req *aggregatorpr
 		taskID = strArray[len(strArray)-1]
 	}
 	// spawn the thread here to process the action asynchronously
-	threadIDFromCtx := ctx.Value("threadid").(int)
-	threadID := threadIDFromCtx + 1
+	threadID := 1
 	ctxt := context.WithValue(ctx, common.ThreadName, common.AddAggregationSource)
 	ctxt = context.WithValue(ctxt, common.ThreadID, strconv.Itoa(threadID))
 	go a.connector.AddAggregationSource(ctxt, taskID, sessionUserName, req)
+	threadID++
 
 	// return 202 Accepted
 	var rpcResp = response.RPC{
@@ -574,12 +573,10 @@ func (a *Aggregator) DeleteAggregationSource(ctx context.Context, req *aggregato
 		taskID = strArray[len(strArray)-1]
 	}
 	var threadID int = 1
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.DeleteAggregationSource)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
-	ctx = context.WithValue(ctx, common.ThreadID, threadID)
+	ctxt := context.WithValue(ctx, common.ThreadName, common.DeleteAggregationSource)
+	ctxt = context.WithValue(ctxt, common.ThreadID, threadID)
+	go deleteAggregationSource(ctxt, taskID, targetURI, a, req)
 	threadID++
-	go deleteAggregationSource(ctx, taskID, targetURI, a, req)
 	// return 202 Accepted
 	var rpcResp = response.RPC{
 		StatusCode:    http.StatusAccepted,
@@ -841,11 +838,12 @@ func (a *Aggregator) ResetElementsOfAggregate(ctx context.Context, req *aggregat
 		return resp, nil
 	}
 	taskID := strings.TrimPrefix(taskURI, "/redfish/v1/TaskService/Tasks/")
-	threadIDFromCtx := ctx.Value("threadid").(int)
-	threadID := threadIDFromCtx + 1
+
+	threadID := 1
 	ctxt := context.WithValue(ctx, common.ThreadName, common.ResetSystem)
 	ctxt = context.WithValue(ctxt, common.ThreadID, strconv.Itoa(threadID))
 	go a.resetElements(ctxt, taskID, sessionUserName, req)
+	threadID++
 	// return 202 Accepted
 	var rpcResp = response.RPC{
 		StatusCode:    http.StatusAccepted,
@@ -941,11 +939,12 @@ func (a *Aggregator) SetDefaultBootOrderElementsOfAggregate(ctx context.Context,
 		// print error as we are unable to communicate with svc-task and then return
 		l.LogWithFields(ctx).Error("Unable to contact task-service with UpdateTask RPC : " + err.Error())
 	}
-	threadIDFromCtx := ctx.Value("threadid").(int)
-	threadID := threadIDFromCtx + 1
+
+	threadID := 1
 	ctxt := context.WithValue(ctx, common.ThreadName, common.SetDefaultBootOrderElementsOfAggregate)
 	ctxt = context.WithValue(ctxt, common.ThreadID, strconv.Itoa(threadID))
 	go a.connector.SetDefaultBootOrderElementsOfAggregate(ctxt, taskID, sessionUserName, req)
+	threadID++
 	// return 202 Accepted
 	var rpcResp = response.RPC{
 		StatusCode:    http.StatusAccepted,

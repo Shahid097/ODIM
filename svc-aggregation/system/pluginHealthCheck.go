@@ -98,11 +98,11 @@ func PerformPluginHealthCheck() {
 			l.LogWithFields(ctx).Error("failed to get list of all plugins:", err.Error())
 		} else {
 			for _, plugin := range pluginList {
-				threadIDFromCtx := ctx.Value("threadid").(int)
-				threadID := threadIDFromCtx + 1
+				threadID := 1
 				ctxt := context.WithValue(ctx, common.ThreadName, common.CheckPluginStatus)
 				ctxt = context.WithValue(ctxt, common.ThreadID, strconv.Itoa(threadID))
 				go checkPluginStatus(ctxt, &phc, plugin)
+				threadID++
 			}
 		}
 		time.Sleep(time.Minute * time.Duration(phc.PluginConfig.PollingFrequencyInMins))

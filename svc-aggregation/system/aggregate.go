@@ -508,10 +508,11 @@ func (e *ExternalInterface) ResetElementsOfAggregate(ctx context.Context, taskID
 	resp.StatusCode = http.StatusOK
 	var cancelled, partialResultFlag bool
 	var wg, writeWG sync.WaitGroup
-	threadIDFromCtx := ctx.Value("threadid").(int)
-	threadID := threadIDFromCtx + 1
+
+	threadID := 1
 	ctxt := context.WithValue(ctx, common.ThreadName, common.SubTaskStatusUpdate)
 	ctxt = context.WithValue(ctxt, common.ThreadID, strconv.Itoa(threadID))
+	threadID++
 	go func() {
 		for i := 0; i < len(aggregate.Elements); i++ {
 			if cancelled == false { // task cancelled check to determine whether to collect status codes.
@@ -549,11 +550,11 @@ func (e *ExternalInterface) ResetElementsOfAggregate(ctx context.Context, taskID
 		// if batch size is 0 then reset all the systems without any kind of batch and ignore the DelayBetweenBatchesInSeconds
 		tempIndex = tempIndex + 1
 		if resetRequest.BatchSize == 0 || tempIndex <= resetRequest.BatchSize {
-			threadIDFromCtx = ctxt.Value("threadid").(int)
-			threadID = threadIDFromCtx + 1
+			threadID = 1
 			resetCtx := context.WithValue(ctxt, common.ThreadName, common.ResetSystem)
 			resetCtx = context.WithValue(resetCtx, common.ThreadID, strconv.Itoa(threadID))
 			go e.resetSystem(resetCtx, taskID, string(req.RequestBody), subTaskChan, sessionUserName, element.OdataID, resetRequest.ResetType, &wg)
+			threadID++
 		}
 
 		if tempIndex == resetRequest.BatchSize && resetRequest.BatchSize != 0 {
@@ -786,11 +787,11 @@ func (e *ExternalInterface) SetDefaultBootOrderElementsOfAggregate(ctx context.C
 	partialResultFlag := false
 	subTaskChan := make(chan int32, len(aggregate.Elements))
 	for _, element := range aggregate.Elements {
-		threadIDFromCtx := ctx.Value("threadid").(int)
-		threadID := threadIDFromCtx + 1
+		threadID := 1
 		ctxt := context.WithValue(ctx, common.ThreadName, common.CollectAndSetDefaultBootOrder)
 		ctxt = context.WithValue(ctxt, common.ThreadID, strconv.Itoa(threadID))
 		go e.collectAndSetDefaultOrder(ctxt, taskID, element.OdataID, reqJSON, subTaskChan, sessionUserName)
+		threadID++
 	}
 	resp.StatusCode = http.StatusOK
 	for i := 0; i < len(aggregate.Elements); i++ {

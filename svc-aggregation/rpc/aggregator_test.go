@@ -1047,6 +1047,7 @@ func TestAggregator_DeleteAggregate(t *testing.T) {
 			name: "Positive cases",
 			a:    &Aggregator{connector: connector},
 			args: args{
+				ctx: mockContext(),
 				req: &aggregatorproto.AggregatorRequest{SessionToken: "validToken", URL: "/redfish/v1/AggregationService/Aggregates/7ff3bd97-c41c-5de0-937d-85d390691b73"},
 			},
 			wantStatusCode: http.StatusNoContent,
@@ -1055,6 +1056,7 @@ func TestAggregator_DeleteAggregate(t *testing.T) {
 			name: "Invalid Token",
 			a:    &Aggregator{connector: connector},
 			args: args{
+				ctx: mockContext(),
 				req: &aggregatorproto.AggregatorRequest{SessionToken: "invalidToken", URL: "/redfish/v1/AggregationService/Aggregates/7ff3bd97-c41c-5de0-937d-85d390691b73"},
 			},
 			wantStatusCode: http.StatusUnauthorized,
@@ -1063,6 +1065,7 @@ func TestAggregator_DeleteAggregate(t *testing.T) {
 			name: "Invalid aggregate id",
 			a:    &Aggregator{connector: connector},
 			args: args{
+				ctx: mockContext(),
 				req: &aggregatorproto.AggregatorRequest{SessionToken: "validToken", URL: "/redfish/v1/AggregationService/Aggregates/1"},
 			},
 			wantStatusCode: http.StatusNotFound,

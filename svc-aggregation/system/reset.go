@@ -105,10 +105,10 @@ func (e *ExternalInterface) Reset(ctx context.Context, taskID string, sessionUse
 	resp.StatusCode = http.StatusOK
 	var cancelled, partialResultFlag bool
 	var wg, writeWG sync.WaitGroup
-	threadIDFromCtx := ctx.Value("threadid").(int)
-	threadID := threadIDFromCtx + 1
+	threadID := 1
 	ctxt := context.WithValue(ctx, common.ThreadName, common.ResetAggregate)
 	ctxt = context.WithValue(ctxt, common.ThreadID, strconv.Itoa(threadID))
+	threadID++
 	go func() {
 
 		for i := 0; i < len(resetRequest.TargetURIs); i++ {
@@ -149,11 +149,11 @@ func (e *ExternalInterface) Reset(ctx context.Context, taskID string, sessionUse
 			if strings.Contains(resource, "/AggregationService/Aggregates") {
 				e.aggregateSystems(ctx, resetRequest.ResetType, resource, taskID, string(req.RequestBody), subTaskChan, sessionUserName, resource, resetRequest.ResetType, &wg)
 			} else {
-				threadIDFromCtx := ctxt.Value("threadid").(int)
-				threadID := threadIDFromCtx + 1
+				threadID := 1
 				resetCtx := context.WithValue(ctxt, common.ThreadName, common.ResetAggregate)
 				resetCtx = context.WithValue(resetCtx, common.ThreadID, strconv.Itoa(threadID))
 				go e.resetSystem(resetCtx, taskID, string(req.RequestBody), subTaskChan, sessionUserName, resource, resetRequest.ResetType, &wg)
+				threadID++
 			}
 		}
 		if tempIndex == resetRequest.BatchSize && resetRequest.BatchSize != 0 {
@@ -236,10 +236,11 @@ func (e *ExternalInterface) aggregateSystems(ctx context.Context, requestType, u
 	subTaskChan1 := make(chan int32, len(aggregate.Elements))
 	resp.StatusCode = http.StatusOK
 	var cancelled, partialResultFlag bool
-	threadIDFromCtx := ctx.Value("threadid").(int)
-	threadID := threadIDFromCtx + 1
+
+	threadID := 1
 	ctxt := context.WithValue(ctx, common.ThreadName, common.SubTaskStatusUpdate)
 	ctxt = context.WithValue(ctxt, common.ThreadID, strconv.Itoa(threadID))
+	threadID++
 	var wg1, writeWG sync.WaitGroup
 	go func() {
 		for i := 0; i < len(aggregate.Elements); i++ {
@@ -271,11 +272,11 @@ func (e *ExternalInterface) aggregateSystems(ctx context.Context, requestType, u
 	for _, element := range aggregate.Elements {
 		wg1.Add(1)
 		writeWG.Add(1)
-		threadIDFromCtx := ctx.Value("threadid").(int)
-		threadID := threadIDFromCtx + 1
+		threadID := 1
 		resetCtxt := context.WithValue(ctxt, common.ThreadName, common.ResetSystem)
 		resetCtxt = context.WithValue(resetCtxt, common.ThreadID, strconv.Itoa(threadID))
 		go e.resetSystem(resetCtxt, subTaskID, reqBody, subTaskChan1, sessionUserName, element.OdataID, requestType, &wg1)
+		threadID++
 	}
 
 	wg1.Wait()

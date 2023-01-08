@@ -40,9 +40,7 @@ var podName = os.Getenv("POD_NAME")
 // GetAggregationService is an rpc handler, it gets invoked during GET on AggregationService API (/redfis/v1/AggregationService/)
 func (a *Aggregator) GetAggregationService(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	resp := &aggregatorproto.AggregatorResponse{}
 	// Fill the response header first
 	resp.Header = map[string]string{
@@ -135,10 +133,8 @@ func validateManagerAddress(managerAddress string) error {
 // Reset function is for handling the RPC communication for Reset Action
 func (a *Aggregator) Reset(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	var threadID int = 1
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
 	// Verfy the credentials here
 	var oemprivileges []string
 	privileges := []string{common.PrivilegeConfigureComponents}
@@ -190,9 +186,7 @@ func (a *Aggregator) reset(ctx context.Context, taskID string, sessionUserName s
 	// Update the task status here
 	// PercentComplete: 0% Completed
 	// TaskState: Running - This value shall represent that the operation is executing.
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	err := a.connector.UpdateTask(common.TaskData{
 		TaskID:          taskID,
 		TaskState:       common.Running,
@@ -225,9 +219,7 @@ func (a *Aggregator) reset(ctx context.Context, taskID string, sessionUserName s
 func (a *Aggregator) SetDefaultBootOrder(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
 	var threadID int = 1
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	var oemprivileges []string
 	privileges := []string{common.PrivilegeConfigureComponents}
 	authResp, err := a.connector.Auth(req.SessionToken, privileges, oemprivileges)
@@ -298,9 +290,7 @@ func (a *Aggregator) RediscoverSystemInventory(ctx context.Context, req *aggrega
 	*aggregatorproto.RediscoverSystemInventoryResponse, error) {
 	resp := &aggregatorproto.RediscoverSystemInventoryResponse{}
 	var threadID int = 1
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.RediscoverSystemInventory)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	ctx = context.WithValue(ctx, common.ThreadID, threadID)
 	go a.connector.RediscoverSystemInventory(ctx, req.SystemID, req.SystemURL, true)
 	threadID++
@@ -314,9 +304,7 @@ func (a *Aggregator) RediscoverSystemInventory(ctx context.Context, req *aggrega
 // RPC according to the protoc file defined in the lib-utilities package.
 func (a *Aggregator) UpdateSystemState(ctx context.Context, req *aggregatorproto.UpdateSystemStateRequest) (
 	*aggregatorproto.UpdateSystemStateResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	resp := &aggregatorproto.UpdateSystemStateResponse{}
 	return resp, a.connector.UpdateSystemState(ctx, req)
 }
@@ -324,9 +312,7 @@ func (a *Aggregator) UpdateSystemState(ctx context.Context, req *aggregatorproto
 // AddAggregationSource function is for handling the RPC communication for AddAggregationSource
 func (a *Aggregator) AddAggregationSource(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	var taskID string
 	var oemprivileges []string
 	privileges := []string{common.PrivilegeConfigureComponents}
@@ -443,9 +429,7 @@ func validateLinks(req *system.Links) string {
 // which is present in the request.
 func (a *Aggregator) GetAllAggregationSource(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	var oemprivileges []string
 	privileges := []string{common.PrivilegeConfigureComponents}
 	authResp, err := a.connector.Auth(req.SessionToken, privileges, oemprivileges)
@@ -473,9 +457,7 @@ func (a *Aggregator) GetAllAggregationSource(ctx context.Context, req *aggregato
 // which is present in the request.
 func (a *Aggregator) GetAggregationSource(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	var oemprivileges []string
 	privileges := []string{common.PrivilegeConfigureComponents}
 	authResp, err := a.connector.Auth(req.SessionToken, privileges, oemprivileges)
@@ -503,9 +485,7 @@ func (a *Aggregator) GetAggregationSource(ctx context.Context, req *aggregatorpr
 // which is present in the request.
 func (a *Aggregator) UpdateAggregationSource(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	var oemprivileges []string
 	privileges := []string{common.PrivilegeConfigureComponents}
 	authResp, err := a.connector.Auth(req.SessionToken, privileges, oemprivileges)
@@ -533,9 +513,7 @@ func (a *Aggregator) UpdateAggregationSource(ctx context.Context, req *aggregato
 // which is present in the request.
 func (a *Aggregator) DeleteAggregationSource(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	var oemprivileges []string
 	// Task Service using RPC and get the taskID
 	targetURI := req.URL
@@ -644,9 +622,7 @@ func deleteAggregationSource(ctx context.Context, taskID string, targetURI strin
 // which is present in the request.
 func (a *Aggregator) CreateAggregate(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	var oemprivileges []string
 	privileges := []string{common.PrivilegeConfigureComponents}
 	authResp, err := a.connector.Auth(req.SessionToken, privileges, oemprivileges)
@@ -671,9 +647,7 @@ func (a *Aggregator) CreateAggregate(ctx context.Context, req *aggregatorproto.A
 // which is present in the request.
 func (a *Aggregator) GetAllAggregates(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	var oemprivileges []string
 	privileges := []string{common.PrivilegeConfigureComponents}
 	authResp, err := a.connector.Auth(req.SessionToken, privileges, oemprivileges)
@@ -698,9 +672,7 @@ func (a *Aggregator) GetAllAggregates(ctx context.Context, req *aggregatorproto.
 // which is present in the request.
 func (a *Aggregator) GetAggregate(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	var oemprivileges []string
 	privileges := []string{common.PrivilegeConfigureComponents}
 	authResp, err := a.connector.Auth(req.SessionToken, privileges, oemprivileges)
@@ -725,9 +697,7 @@ func (a *Aggregator) GetAggregate(ctx context.Context, req *aggregatorproto.Aggr
 // which is present in the request.
 func (a *Aggregator) DeleteAggregate(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	var oemprivileges []string
 	privileges := []string{common.PrivilegeConfigureComponents}
 	authResp, err := a.connector.Auth(req.SessionToken, privileges, oemprivileges)
@@ -752,9 +722,7 @@ func (a *Aggregator) DeleteAggregate(ctx context.Context, req *aggregatorproto.A
 // which is present in the request.
 func (a *Aggregator) AddElementsToAggregate(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	var oemprivileges []string
 	privileges := []string{common.PrivilegeConfigureComponents}
 	authResp, err := a.connector.Auth(req.SessionToken, privileges, oemprivileges)
@@ -779,9 +747,7 @@ func (a *Aggregator) AddElementsToAggregate(ctx context.Context, req *aggregator
 // which is present in the request.
 func (a *Aggregator) RemoveElementsFromAggregate(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	var oemprivileges []string
 	privileges := []string{common.PrivilegeConfigureComponents}
 	authResp, err := a.connector.Auth(req.SessionToken, privileges, oemprivileges)
@@ -806,9 +772,7 @@ func (a *Aggregator) RemoveElementsFromAggregate(ctx context.Context, req *aggre
 // which is present in the request.
 func (a *Aggregator) ResetElementsOfAggregate(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	// Verfy the credentials here
 	var oemprivileges []string
 	privileges := []string{common.PrivilegeConfigureComponents}
@@ -892,9 +856,7 @@ func (a *Aggregator) resetElements(ctx context.Context, taskID string, sessionUs
 // which is present in the request.
 func (a *Aggregator) SetDefaultBootOrderElementsOfAggregate(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	var oemprivileges []string
 	privileges := []string{common.PrivilegeConfigureComponents}
 	authResp, err := a.connector.Auth(req.SessionToken, privileges, oemprivileges)
@@ -967,9 +929,7 @@ func (a *Aggregator) SetDefaultBootOrderElementsOfAggregate(ctx context.Context,
 // which is present in the request.
 func (a *Aggregator) GetAllConnectionMethods(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	var oemprivileges []string
 	privileges := []string{common.PrivilegeLogin}
 	authResp, err := a.connector.Auth(req.SessionToken, privileges, oemprivileges)
@@ -994,9 +954,7 @@ func (a *Aggregator) GetAllConnectionMethods(ctx context.Context, req *aggregato
 // which is present in the request.
 func (a *Aggregator) GetConnectionMethod(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	var oemprivileges []string
 	privileges := []string{common.PrivilegeLogin}
 	authResp, err := a.connector.Auth(req.SessionToken, privileges, oemprivileges)
@@ -1021,9 +979,7 @@ func (a *Aggregator) GetConnectionMethod(ctx context.Context, req *aggregatorpro
 // which has restarted.
 func (a *Aggregator) SendStartUpData(ctx context.Context, req *aggregatorproto.SendStartUpDataRequest) (
 	resp *aggregatorproto.SendStartUpDataResponse, err error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	rpcResponce := a.connector.SendStartUpData(ctx, req)
 	bytes, _ := json.Marshal(rpcResponce.Body)
 	resp = &aggregatorproto.SendStartUpDataResponse{
@@ -1035,9 +991,7 @@ func (a *Aggregator) SendStartUpData(ctx context.Context, req *aggregatorproto.S
 // GetResetActionInfoService is an rpc handler, it gets invoked during GET on AggregationService API (/redfis/v1/AggregationService/)
 func (a *Aggregator) GetResetActionInfoService(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	resp := &aggregatorproto.AggregatorResponse{}
 	// Fill the response header first
 	resp.Header = map[string]string{
@@ -1091,9 +1045,7 @@ func (a *Aggregator) GetResetActionInfoService(ctx context.Context, req *aggrega
 // GetSetDefaultBootOrderActionInfo is an rpc handler, it gets invoked during GET on AggregationService API (/redfis/v1/AggregationService/)
 func (a *Aggregator) GetSetDefaultBootOrderActionInfo(ctx context.Context, req *aggregatorproto.AggregatorRequest) (
 	*aggregatorproto.AggregatorResponse, error) {
-	ctx = common.GetContextData(ctx)
-	ctx = context.WithValue(ctx, common.ThreadName, common.AggregationService)
-	ctx = context.WithValue(ctx, common.ProcessName, podName)
+	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	resp := &aggregatorproto.AggregatorResponse{}
 	// Fill the response header first
 	resp.Header = map[string]string{

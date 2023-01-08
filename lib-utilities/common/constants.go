@@ -437,6 +437,7 @@ var Actions = map[ActionKey]ActionType{
 	{"LicenseService", "Licenses", "GET"}:       {"213", "GetLicenseCollection"},
 	{"LicenseService", "Licenses/{id}", "GET"}:  {"214", "GetLicenseResource"},
 	{"LicenseService", "Licenses", "POST"}:      {"215", "InstallLicenseService"},
+	// 216 and 217 operations are svc-aggregation internal operations pluginhealthcheck and RediscoverSystem
 }
 
 var Types = map[string]string{

@@ -47,6 +47,12 @@ var (
 	podName               = os.Getenv("POD_NAME")
 )
 
+const (
+	PluginHealthCheckActionID = "216"
+
+	PluginHealthCheckActionName = "PluginHealthCheck"
+)
+
 // SendStartUpData is for sending plugin start up data
 func (e *ExternalInterface) SendStartUpData(ctx context.Context, startUpReq *aggregatorproto.SendStartUpDataRequest) response.RPC {
 	resp := response.RPC{}
@@ -87,7 +93,7 @@ func (e *ExternalInterface) SendStartUpData(ctx context.Context, startUpReq *agg
 // all the plugins continuously over a configured interval
 func PerformPluginHealthCheck() {
 	transactionID := uuid.New()
-	ctx := agcommon.CreateContext(transactionID.String(), "216", "PerformPluginHealthCheck", "1", common.AggregationService, podName)
+	ctx := agcommon.CreateContext(transactionID.String(), PluginHealthCheckActionID, PluginHealthCheckActionName, "1", common.AggregationService, podName)
 	l.LogWithFields(ctx).Info("plugins health check routine started")
 	phc := agcommon.PluginHealthCheckInterface{
 		DecryptPassword: DecryptWithPrivateKey,

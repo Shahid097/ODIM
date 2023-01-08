@@ -33,6 +33,12 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	RediscoverResourcesActionID = "217"
+
+	RediscoverResourcesActionName = "RediscoverResources"
+)
+
 // RediscoverSystemInventory  is the handler for redicovering system whenever the restrat event detected in event service
 //It deletes old data and  Discovers Computersystem & Chassis and its top level odata.ID links and store them in inmemory db.
 func (e *ExternalInterface) RediscoverSystemInventory(ctx context.Context, deviceUUID, systemURL string, updateFlag bool) {
@@ -189,7 +195,7 @@ func (e *ExternalInterface) RediscoverResources() error {
 
 	// Get the resources from OnDisk DB
 	transactionID := uuid.New()
-	ctx := agcommon.CreateContext(transactionID.String(), "217", "RediscoverResources", "1", common.AggregationService, podName)
+	ctx := agcommon.CreateContext(transactionID.String(), RediscoverResourcesActionID, RediscoverResourcesActionName, "1", common.AggregationService, podName)
 	targets, err := agmodel.GetAllSystems()
 	if err != nil || len(targets) == 0 {
 		// nothing to re-discover

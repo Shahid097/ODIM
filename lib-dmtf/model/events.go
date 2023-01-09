@@ -321,7 +321,7 @@ type EventDestination struct {
 	ODataEtag                    string           `json:"@odata.etag,omitempty"`
 	ODataId                      string           `json:"@odata.id"`
 	ODataType                    string           `json:"@odata.type"`
-	Actions                      *Actions         `json:"Actions,omitempty"`
+	Actions                      *Action          `json:"Actions,omitempty"`
 	Certificates                 *Link            `json:"Certificates,omitempty"`
 	ClientCertificates           *Link            `json:"ClientCertificates,omitempty"`
 	Context                      string           `json:"Context"`

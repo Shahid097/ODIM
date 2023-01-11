@@ -366,6 +366,7 @@ type EventDestinationAction struct {
 	Oem                 *OemActions          `json:"OemActions,omitempty"`
 }
 
+<<<<<<< HEAD
 // This action shall resume a suspended event subscription,
 // which affects the subscription status. The service may deliver
 // buffered events when the subscription is resumed.
@@ -375,6 +376,8 @@ type ResumeSubscription struct {
 	Title  string `json:"title,omitempty"`
 }
 
+=======
+>>>>>>> 54246b256ec27f75e1f9e6d8e3e2d9c911b13eb3
 // This type shall contain the settings for an SNMP event destination.
 // Reference	                : EventDestination.v1_12_0.json
 type SNMPSettings struct {
@@ -459,7 +462,7 @@ type SMTPSettings struct {
 // ServerSentEventUri property, as described by the Redfish Specification.
 // Reference                    : EventService.v1_8_0.json
 type SSEFilterPropertiesSupported struct {
-	EventFormatType         bool `json:"EventFormatType"`
+	EventFormatType         bool `json:"EventFormatType,omitempty"`
 	EventType               bool `json:"EvenType,omitempty"`
 	MessageIds              bool `json:"MessageIds,omitempty"`
 	MetricReportDefinitions bool `json:"MetricReportDefinitions,omitempty"`
@@ -486,7 +489,7 @@ type SubmitTestEvent struct {
 	EventType         EventType       `json:"EventType,omitempty"`
 	Message           string          `json:"Message,omitempty"`
 	MessageArgs       []string        `json:"MessageArgs,omitempty"`
-	MessageId         string          `json:"MessageId"`
+	MessageId         string          `json:"MessageId,omitempty"`
 	OriginOfCondition string          `json:"OriginOfCondition,omitempty"`
 	Severity          MessageSeverity `json:"Severity,omitempty"`
 }

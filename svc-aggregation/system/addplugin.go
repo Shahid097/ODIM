@@ -141,7 +141,12 @@ func (e *ExternalInterface) addPluginData(ctx context.Context, req AddResourceRe
 	// Getting all managers info from plugin
 	pluginContactRequest.HTTPMethodType = http.MethodGet
 	pluginContactRequest.OID = "/ODIM/v1/Managers"
-	body, _, getResponse, err := contactPlugin(ctx, pluginContactRequest, "error while getting the details "+pluginContactRequest.OID+": ")
+	body, a, getResponse, err := contactPlugin(ctx, pluginContactRequest, "error while getting the details "+pluginContactRequest.OID+": ")
+	fmt.Println("body", body)
+	fmt.Println("string", a)
+	fmt.Println("getresponsefrom plugin", getResponse)
+	fmt.Println("error", err)
+	fmt.Println("taskInfo", taskInfo)
 	if err != nil {
 		errMsg := err.Error()
 		l.LogWithFields(ctx).Error(errMsg)

@@ -34,7 +34,7 @@ import (
 
 func (e *ExternalInterface) addPluginData(ctx context.Context, req AddResourceRequest, taskID, targetURI string, pluginContactRequest getResourceRequest, queueList []string, cmVariants connectionMethodVariants) (response.RPC, string, []byte) {
 	var resp response.RPC
-	taskInfo := &common.TaskUpdateInfo{TaskID: taskID, TargetURI: targetURI, UpdateTask: e.UpdateTask, TaskRequest: pluginContactRequest.TaskRequest}
+	taskInfo := &common.TaskUpdateInfo{Context: ctx, TaskID: taskID, TargetURI: targetURI, UpdateTask: e.UpdateTask, TaskRequest: pluginContactRequest.TaskRequest}
 
 	if !(cmVariants.PreferredAuthType == "BasicAuth" || cmVariants.PreferredAuthType == "XAuthToken") {
 		errMsg := "error: incorrect request property value for PreferredAuthType"
@@ -141,12 +141,11 @@ func (e *ExternalInterface) addPluginData(ctx context.Context, req AddResourceRe
 	// Getting all managers info from plugin
 	pluginContactRequest.HTTPMethodType = http.MethodGet
 	pluginContactRequest.OID = "/ODIM/v1/Managers"
-	body, a, getResponse, err := contactPlugin(ctx, pluginContactRequest, "error while getting the details "+pluginContactRequest.OID+": ")
-	fmt.Println("body", body)
-	fmt.Println("string", a)
-	fmt.Println("getresponsefrom plugin", getResponse)
+	body, _, getResponse, err := contactPlugin(ctx, pluginContactRequest, "error while getting the details "+pluginContactRequest.OID+": ")
+	fmt.Printf("getresponsefrom plugin: %+v\n", getResponse)
 	fmt.Println("error", err)
-	fmt.Println("taskInfo", taskInfo)
+	fmt.Printf("taskinfo: %+v\n", taskInfo)
+
 	if err != nil {
 		errMsg := err.Error()
 		l.LogWithFields(ctx).Error(errMsg)

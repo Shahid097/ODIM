@@ -69,11 +69,6 @@ func main() {
 
 	//WrapRouter method removes the trailing slash from the URL if present in the request and convert the URL to lower case.
 	router.WrapRouter(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-		fmt.Println("Redirect:", "https://"+r.Host+r.RequestURI)
-		if r.TLS == nil {
-			http.Redirect(w, r, "https://"+r.Host+r.RequestURI, http.StatusMovedPermanently)
-			return
-		}
 		path := r.URL.Path
 		path = strings.Replace(strings.Replace(path, "\n", "", -1), "\r", "", -1)
 		if len(path) > 1 && path[len(path)-1] == '/' && path[len(path)-2] != '/' {

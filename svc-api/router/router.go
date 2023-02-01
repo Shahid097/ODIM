@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -215,6 +216,11 @@ func Router() *iris.Application {
 	// Parses the URL and performs URL decoding for path
 	// Getting the request body copy
 	router.WrapRouter(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+		fmt.Println("Redirect:", "https://"+r.Host+r.RequestURI)
+		if r.TLS == nil {
+			http.Redirect(w, r, "https://"+r.Host+r.RequestURI, http.StatusMovedPermanently)
+			return
+		}
 		ctx := r.Context()
 		l.LogWithFields(ctx).Info("Inside router function")
 		rawURI := r.RequestURI

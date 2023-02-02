@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -39,7 +38,6 @@ import (
 	"github.com/ODIM-Project/ODIM/svc-api/ratelimiter"
 	"github.com/ODIM-Project/ODIM/svc-api/rpc"
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/middleware/rewrite"
 )
 
 var isCompositionEnabled bool
@@ -215,17 +213,7 @@ func Router() *iris.Application {
 
 	router := iris.New()
 	router.OnErrorCode(iris.StatusNotFound, handle.SystemsMethodInvalidURI)
-	opts := rewrite.Options{
-		RedirectMatch: []string{
-			"301 ^(http|https)://test.(.*) $1://newtest.$2",
-		},
-		PrimarySubdomain: "www",
-	}
-	rw, err := rewrite.New(opts)
-	if err != nil {
-		log.Fatal("rewrite issue")
-	}
-	router.WrapRouter(rw.Rewrite)
+
 	// Parses the URL and performs URL decoding for path
 	// Getting the request body copy
 	router.WrapRouter(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {

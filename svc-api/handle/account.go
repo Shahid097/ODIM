@@ -18,6 +18,7 @@ package handle
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/ODIM-Project/ODIM/lib-utilities/common"
@@ -42,6 +43,12 @@ type AccountRPCs struct {
 // After the RPC call the method will feed the response to the iris
 // and gives out a proper response.
 func (a *AccountRPCs) GetAccountService(ctx iris.Context) {
+	ssl := ctx.IsSSL()
+	if ssl {
+		fmt.Println("SSL enabled")
+	} else {
+		fmt.Println("SSL not enabled")
+	}
 	defer ctx.Next()
 	ctxt := ctx.Request().Context()
 	req := accountproto.AccountRequest{

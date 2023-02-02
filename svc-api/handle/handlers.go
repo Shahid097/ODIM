@@ -18,6 +18,7 @@ package handle
 import (
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -120,6 +121,12 @@ func getService(microServices []string, uuid string) models.ServiceRoot {
 
 // GetServiceRoot builds response body and headers for /redfish/v1
 func (s *ServiceRoot) GetServiceRoot(ctx iris.Context) {
+	ssl := ctx.IsSSL()
+	if ssl {
+		fmt.Println("SSL enabled")
+	} else {
+		fmt.Println("SSL not enabled")
+	}
 	defer ctx.Next()
 	services := config.Data.EnabledServices
 	uuid := config.Data.RootServiceUUID
@@ -135,6 +142,12 @@ func (s *ServiceRoot) GetServiceRoot(ctx iris.Context) {
 
 // GetOdata builds response body and headers for /redfish/v1/odata
 func GetOdata(ctx iris.Context) {
+	ssl := ctx.IsSSL()
+	if ssl {
+		fmt.Println("SSL enabled")
+	} else {
+		fmt.Println("SSL not enabled")
+	}
 	defer ctx.Next()
 	Odata := models.Odata{
 		RedfishCopyright: "Copyright © 2014-2015 Distributed Management Task Force, Inc. (DMTF). All rights reserved.",

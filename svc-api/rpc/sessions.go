@@ -25,7 +25,6 @@ import (
 	sessionproto "github.com/ODIM-Project/ODIM/lib-utilities/proto/session"
 	"github.com/ODIM-Project/ODIM/lib-utilities/services"
 	"github.com/ODIM-Project/ODIM/svc-api/ratelimiter"
-	"github.com/kataras/iris/v12"
 )
 
 var (
@@ -132,7 +131,6 @@ func GetAllActiveSessionRequest(ctx context.Context, sessionID, sessionToken str
 
 // GetSessionServiceRequest will do the rpc call to check session
 func GetSessionServiceRequest(ctx context.Context) (*sessionproto.SessionResponse, error) {
-	ctx.Redirect("/", iris.StatusPermanentRedirect)
 	ctx = common.CreateMetadata(ctx)
 	conn, err := ClientFunc(services.AccountSession)
 	if err != nil {

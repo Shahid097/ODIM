@@ -211,7 +211,9 @@ func main() {
 	// TrackConfigFileChanges monitors the odim config changes using fsnotfiy
 	go apicommon.TrackConfigFileChanges(errChan)
 
-	router.Run(iris.Server(apiServer))
+	//router.Run(iris.Server(apiServer))
+	router.Run(iris.TLS(apiServer.Addr, string(*conf.Certificate), string(*conf.PrivateKey)))
+	//router.Run(iris.AutoTLS(apiServer.Addr))
 }
 
 // invalidAuthResp function is used to generate an invalid credentials response

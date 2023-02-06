@@ -219,6 +219,14 @@ func Router() *iris.Application {
 	router.WrapRouter(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 		ctx := r.Context()
 		l.LogWithFields(ctx).Info("Inside router function")
+		if r.URL.Scheme == "http" {
+			l.LogWithFields(ctx).Info("Redirecting to HTTPS")
+			//targetUrl := url.URL{Scheme: "https", Host: r.Host, Path: r.URL.Path, RawQuery: r.URL.RawQuery}
+			http.Redirect(w, r, "https://"+r.Host+r.RequestURI, http.StatusMovedPermanently)
+			//http.Redirect(w, r, targetUrl, http.StatusMovedPermanently)
+			return
+		}
+		l.LogWithFields(ctx).Info("https")
 		rawURI := r.RequestURI
 		parsedURI, err := url.Parse(rawURI)
 		if err != nil {
@@ -266,6 +274,7 @@ func Router() *iris.Application {
 				}
 			}
 		}
+
 		if config.Data.RequestLimitCountPerSession > 0 {
 			err = ratelimiter.RequestRateLimiter(ctx, sessionToken)
 			if err != nil {
@@ -324,7 +333,7 @@ func Router() *iris.Application {
 	session.Get("/Sessions", middleware.SessionDelMiddleware, s.GetAllActiveSessions)
 	session.Get("/Sessions/{sessionID}", middleware.SessionDelMiddleware, s.GetSession)
 	session.Post("/Sessions", s.CreateSession)
-	session.Delete("/Sessions/{sessionID}", s.DeleteSession)
+	session.Delete("/Sessions/{sessionID}", middleware.SessionDelMiddleware, s.DeleteSession)
 	session.Any("/", handle.SsMethodNotAllowed)
 	session.Any("/Sessions", handle.SsMethodNotAllowed)
 	session.Any("/Sessions/{sessionID}", handle.SsMethodNotAllowed)

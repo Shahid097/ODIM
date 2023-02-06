@@ -69,6 +69,7 @@ func main() {
 
 	//WrapRouter method removes the trailing slash from the URL if present in the request and convert the URL to lower case.
 	router.WrapRouter(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+
 		path := r.URL.Path
 		path = strings.Replace(strings.Replace(path, "\n", "", -1), "\r", "", -1)
 		if len(path) > 1 && path[len(path)-1] == '/' && path[len(path)-2] != '/' {
@@ -211,8 +212,8 @@ func main() {
 	// TrackConfigFileChanges monitors the odim config changes using fsnotfiy
 	go apicommon.TrackConfigFileChanges(errChan)
 
-	//router.Run(iris.Server(apiServer))
-	router.Run(iris.TLS(apiServer.Addr, string(*conf.Certificate), string(*conf.PrivateKey)))
+	router.Run(iris.Server(apiServer))
+	//router.Run(iris.TLS(apiServer.Addr, string(*conf.Certificate), string(*conf.PrivateKey)),iris.AutoTLSNoRedirect())
 	//router.Run(iris.AutoTLS(apiServer.Addr))
 }
 

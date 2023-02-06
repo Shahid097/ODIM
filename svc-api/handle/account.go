@@ -43,6 +43,7 @@ type AccountRPCs struct {
 // After the RPC call the method will feed the response to the iris
 // and gives out a proper response.
 func (a *AccountRPCs) GetAccountService(ctx iris.Context) {
+	ctx.Redirect("/", iris.StatusPermanentRedirect)
 	ssl := ctx.IsSSL()
 	if ssl {
 		fmt.Println("SSL enabled")

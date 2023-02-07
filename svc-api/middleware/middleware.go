@@ -16,8 +16,6 @@
 package middleware
 
 import (
-	"fmt"
-
 	l "github.com/ODIM-Project/ODIM/lib-utilities/logs"
 	"github.com/ODIM-Project/ODIM/svc-api/rpc"
 	iris "github.com/kataras/iris/v12"
@@ -38,10 +36,4 @@ func SessionDelMiddleware(ctx iris.Context) {
 			return
 		}
 	}
-}
-func RedirectHTTPtoHTTPS(ctx iris.Context) {
-	fmt.Println("Redirect Middleware")
-	ctx.Redirect("/", iris.StatusPermanentRedirect)
-
-	return
 }

@@ -44,6 +44,7 @@ var cs handle.CompositionServiceRPCs
 
 // Router method to register API handlers.
 func Router() *iris.Application {
+
 	r := handle.RoleRPCs{
 		GetAllRolesRPC: rpc.GetAllRoles,
 		GetRoleRPC:     rpc.GetRole,
@@ -215,7 +216,6 @@ func Router() *iris.Application {
 
 	// Parses the URL and performs URL decoding for path
 	// Getting the request body copy
-
 	router.WrapRouter(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 		ctx := r.Context()
 		l.LogWithFields(ctx).Info("Inside router function")
@@ -223,7 +223,6 @@ func Router() *iris.Application {
 			l.LogWithFields(ctx).Info("Redirecting to HTTPS")
 			//targetUrl := url.URL{Scheme: "https", Host: r.Host, Path: r.URL.Path, RawQuery: r.URL.RawQuery}
 			http.Redirect(w, r, "https://"+r.Host+r.RequestURI, http.StatusMovedPermanently)
-			//http.Redirect(w, r, targetUrl, http.StatusMovedPermanently)
 			return
 		}
 		l.LogWithFields(ctx).Info("https")
@@ -302,16 +301,16 @@ func Router() *iris.Application {
 			ratelimiter.DecrementCounter(sessionToken, ratelimiter.SessionRateLimit)
 		}
 	})
-	taskmon := router.Party("/taskmon", middleware.RedirectHTTPtoHTTPS)
+	taskmon := router.Party("/taskmon")
 	taskmon.SetRegisterRule(iris.RouteSkip)
 	taskmon.Get("/{TaskID}", ts.GetTaskMonitor)
 	taskmon.Any("/{TaskID}", handle.TsMethodNotAllowed)
 
 	redfish := router.Party("/redfish")
 	redfish.SetRegisterRule(iris.RouteSkip)
-	redfish.Get("/", middleware.RedirectHTTPtoHTTPS, handle.GetVersion)
+	redfish.Get("/", handle.GetVersion)
 
-	v1 := redfish.Party("/v1", middleware.RedirectHTTPtoHTTPS)
+	v1 := redfish.Party("/v1")
 	v1.SetRegisterRule(iris.RouteSkip)
 	v1.Get("/", serviceRoot.GetServiceRoot)
 	v1.Get("/odata", handle.GetOdata)
@@ -320,14 +319,14 @@ func Router() *iris.Application {
 	v1.Any("/odata", handle.SRMethodNotAllowed)
 	v1.Any("/$metadata", handle.SRMethodNotAllowed)
 
-	registry := v1.Party("/Registries", middleware.RedirectHTTPtoHTTPS)
+	registry := v1.Party("/Registries")
 	registry.SetRegisterRule(iris.RouteSkip)
 	registry.Get("/", registryFile.GetRegistryFileCollection)
 	registry.Get("/{id}", registryFile.GetMessageRegistryFileID)
 	registry.Any("/", handle.RegMethodNotAllowed)
 	registry.Any("/{id}", handle.RegMethodNotAllowed)
 
-	session := v1.Party("/SessionService", middleware.RedirectHTTPtoHTTPS)
+	session := v1.Party("/SessionService")
 	session.SetRegisterRule(iris.RouteSkip)
 	session.Get("/", s.GetSessionService)
 	session.Get("/Sessions", middleware.SessionDelMiddleware, s.GetAllActiveSessions)
@@ -338,7 +337,7 @@ func Router() *iris.Application {
 	session.Any("/Sessions", handle.SsMethodNotAllowed)
 	session.Any("/Sessions/{sessionID}", handle.SsMethodNotAllowed)
 
-	account := v1.Party("/AccountService", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+	account := v1.Party("/AccountService", middleware.SessionDelMiddleware)
 	account.SetRegisterRule(iris.RouteSkip)
 	account.Get("/", a.GetAccountService)
 	account.Get("/Accounts", a.GetAllAccounts)
@@ -350,7 +349,7 @@ func Router() *iris.Application {
 	account.Any("/Accounts", handle.AsMethodNotAllowed)
 	account.Any("/Accounts/{id}", handle.AsMethodNotAllowed)
 
-	role := account.Party("/Roles", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+	role := account.Party("/Roles", middleware.SessionDelMiddleware)
 	role.SetRegisterRule(iris.RouteSkip)
 	role.Get("/", r.GetAllRoles)
 	role.Get("/{id}", r.GetRole)
@@ -359,7 +358,7 @@ func Router() *iris.Application {
 	role.Any("/", handle.RoleMethodNotAllowed)
 	role.Any("/{id}", handle.RoleMethodNotAllowed)
 
-	task := v1.Party("/TaskService", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+	task := v1.Party("/TaskService", middleware.SessionDelMiddleware)
 	task.SetRegisterRule(iris.RouteSkip)
 	task.Get("/", ts.GetTaskService)
 	task.Get("/Tasks", ts.TaskCollection)
@@ -373,7 +372,7 @@ func Router() *iris.Application {
 	task.Any("/Tasks/{TaskID}/SubTasks", handle.TsMethodNotAllowed)
 	task.Any("/Tasks/{TaskID}/SubTasks/{subTaskID}", handle.TsMethodNotAllowed)
 
-	systems := v1.Party("/Systems", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+	systems := v1.Party("/Systems", middleware.SessionDelMiddleware)
 	systems.SetRegisterRule(iris.RouteSkip)
 	systems.Get("/", system.GetSystemsCollection)
 	systems.Get("/{id}", system.GetSystem)
@@ -418,7 +417,7 @@ func Router() *iris.Application {
 	systems.Any("/{id}/LogServices/{rid}/Actions", handle.SystemsMethodNotAllowed)
 	systems.Any("/{id}/LogServices/{rid}/Actions/LogService.ClearLog", handle.SystemsMethodNotAllowed)
 
-	systems.Get("/{id}/Bios", middleware.RedirectHTTPtoHTTPS, system.GetSystemResource)
+	systems.Get("/{id}/Bios", system.GetSystemResource)
 	systems.Get("/{id}/Bios/Settings", system.GetSystemResource)
 	systems.Patch("/{id}/Bios/Settings", system.ChangeBiosSettings)
 	systems.Any("/{id}/Bios", handle.SystemsMethodNotAllowed)
@@ -427,7 +426,7 @@ func Router() *iris.Application {
 	systems.Any("{id}/Bios/Settings/Actions/Bios.ResetBios/", handle.SystemsMethodNotAllowed)
 	systems.Any("/{id}/Memory/{rid}", handle.SystemsMethodNotAllowed)
 
-	storage := v1.Party("/Systems/{id}/Storage", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+	storage := v1.Party("/Systems/{id}/Storage", middleware.SessionDelMiddleware)
 	storage.SetRegisterRule(iris.RouteSkip)
 	storage.Get("/", system.GetSystemResource)
 	storage.Get("/{rid}", system.GetSystemResource)
@@ -462,12 +461,12 @@ func Router() *iris.Application {
 	storage.Get("/{id2}/StoragePools/{id3}/CapacitySources/{rid}/ProvidingDrives", system.GetSystemResource)
 	storage.Any("/{id2}/StoragePools/{id3}/CapacitySources/{rid}/ProvidingDrives", handle.SystemsMethodNotAllowed)
 
-	systemsAction := systems.Party("/{id}/Actions", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+	systemsAction := systems.Party("/{id}/Actions", middleware.SessionDelMiddleware)
 	systemsAction.SetRegisterRule(iris.RouteSkip)
 	systemsAction.Post("/ComputerSystem.Reset", system.ComputerSystemReset)
 	systemsAction.Post("/ComputerSystem.SetDefaultBootOrder", system.SetDefaultBootOrder)
 
-	aggregation := v1.Party("/AggregationService", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+	aggregation := v1.Party("/AggregationService", middleware.SessionDelMiddleware)
 	aggregation.SetRegisterRule(iris.RouteSkip)
 	aggregation.Get("/", pc.GetAggregationService)
 	aggregation.Get("/ResetActionInfo", pc.GetResetActionInfoService)
@@ -478,7 +477,7 @@ func Router() *iris.Application {
 	aggregation.Any("/Actions/AggregationService.SetDefaultBootOrder/", handle.AggMethodNotAllowed)
 	aggregation.Any("/", handle.AggMethodNotAllowed)
 
-	aggregationSource := aggregation.Party("/AggregationSources", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+	aggregationSource := aggregation.Party("/AggregationSources", middleware.SessionDelMiddleware)
 	aggregationSource.Post("/", pc.AddAggregationSource)
 	aggregationSource.Get("/", pc.GetAllAggregationSource)
 	aggregationSource.Any("/", handle.AggMethodNotAllowed)
@@ -487,13 +486,13 @@ func Router() *iris.Application {
 	aggregationSource.Delete("/{id}", pc.DeleteAggregationSource)
 	aggregationSource.Any("/{id}", handle.AggMethodNotAllowed)
 
-	connectionMethods := aggregation.Party("/ConnectionMethods", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+	connectionMethods := aggregation.Party("/ConnectionMethods", middleware.SessionDelMiddleware)
 	connectionMethods.Get("/", pc.GetAllConnectionMethods)
 	connectionMethods.Get("/{id}", pc.GetConnectionMethod)
 	connectionMethods.Any("/", handle.AggMethodNotAllowed)
 	connectionMethods.Any("/{id}", handle.AggMethodNotAllowed)
 
-	aggregates := aggregation.Party("/Aggregates", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+	aggregates := aggregation.Party("/Aggregates", middleware.SessionDelMiddleware)
 	aggregates.Post("/", pc.CreateAggregate)
 	aggregates.Get("/", pc.GetAggregateCollection)
 	aggregates.Any("/", handle.AggregateMethodNotAllowed)
@@ -509,7 +508,7 @@ func Router() *iris.Application {
 	aggregates.Post("/{id}/Actions/Aggregate.SetDefaultBootOrder/", pc.SetDefaultBootOrderAggregateElements)
 	aggregates.Any("/{id}/Actions/Aggregate.SetDefaultBootOrder/", handle.AggregateMethodNotAllowed)
 
-	chassis := v1.Party("/Chassis", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+	chassis := v1.Party("/Chassis", middleware.SessionDelMiddleware)
 	chassis.SetRegisterRule(iris.RouteSkip)
 	chassis.Get("/", cha.GetChassisCollection)
 	chassis.Post("/", cha.CreateChassis)
@@ -554,13 +553,13 @@ func Router() *iris.Application {
 	chassis.Get("/{id}/LogServices/{rid}/Entries/{rid2}", ratelimiter.ResourceRateLimiter, cha.GetChassisResource)
 	// TODO
 	// chassis.Post("/{id}/LogServices/{rid}/Actions/LogService.ClearLog", cha.GetChassisResource)
-	chassis.Any("/{id}/LogServices", middleware.RedirectHTTPtoHTTPS, handle.ChassisMethodNotAllowed)
+	chassis.Any("/{id}/LogServices", handle.ChassisMethodNotAllowed)
 	chassis.Any("/{id}/LogServices/{rid}", handle.ChassisMethodNotAllowed)
 	chassis.Any("/{id}/LogServices/{rid}/Entries", handle.ChassisMethodNotAllowed)
 	chassis.Any("/{id}/LogServices/{rid}/Entries/{rid2}", handle.ChassisMethodNotAllowed)
 	chassis.Any("/{id}/LogServices/{rid}/Actions", handle.ChassisMethodNotAllowed)
 
-	chassisPower := chassis.Party("/{id}/Power", middleware.RedirectHTTPtoHTTPS)
+	chassisPower := chassis.Party("/{id}/Power")
 	chassisPower.SetRegisterRule(iris.RouteSkip)
 	chassisPower.Get("/", cha.GetChassisResource)
 	chassisPower.Get("#PowerControl/{id1}", cha.GetChassisResource)
@@ -571,7 +570,7 @@ func Router() *iris.Application {
 	chassisPower.Any("#PowerSupplies/{id1}", handle.ChassisMethodNotAllowed)
 	chassisPower.Any("#Redundancy/{id1}", handle.ChassisMethodNotAllowed)
 
-	chassisThermal := chassis.Party("/{id}/Thermal", middleware.RedirectHTTPtoHTTPS)
+	chassisThermal := chassis.Party("/{id}/Thermal")
 	chassisThermal.SetRegisterRule(iris.RouteSkip)
 	chassisThermal.Get("/", cha.GetChassisResource)
 	chassisThermal.Get("#Fans/{id1}", cha.GetChassisResource)
@@ -580,7 +579,7 @@ func Router() *iris.Application {
 	chassisThermal.Any("#Fans/{id1}", handle.ChassisMethodNotAllowed)
 	chassisThermal.Any("#Temperatures/{id1}", handle.ChassisMethodNotAllowed)
 
-	events := v1.Party("/EventService", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+	events := v1.Party("/EventService", middleware.SessionDelMiddleware)
 	events.SetRegisterRule(iris.RouteSkip)
 	events.Get("/", evt.GetEventService)
 	events.Get("/Subscriptions", evt.GetEventSubscriptionsCollection)
@@ -593,7 +592,7 @@ func Router() *iris.Application {
 	events.Any("/Actions/EventService.SubmitTestEvent", handle.EvtMethodNotAllowed)
 	events.Any("/Subscriptions", handle.EvtMethodNotAllowed)
 
-	fabrics := v1.Party("/Fabrics", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+	fabrics := v1.Party("/Fabrics", middleware.SessionDelMiddleware)
 	fabrics.SetRegisterRule(iris.RouteSkip)
 	fabrics.Get("/", fab.GetFabricCollection)
 	fabrics.Get("/{id}", fab.GetFabric)
@@ -633,7 +632,7 @@ func Router() *iris.Application {
 	fabrics.Any("/{id}/Endpoints/{endpoint_uuid}", handle.FabricsMethodNotAllowed)
 	fabrics.Any("/{id}/AddressPools/{addresspool_uuid}", handle.FabricsMethodNotAllowed)
 
-	managers := v1.Party("/Managers", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+	managers := v1.Party("/Managers", middleware.SessionDelMiddleware)
 	managers.SetRegisterRule(iris.RouteSkip)
 	managers.Get("/", manager.GetManagersCollection)
 	managers.Get("/{id}", manager.GetManager)
@@ -688,7 +687,7 @@ func Router() *iris.Application {
 	managers.Any("/", handle.ManagersMethodNotAllowed)
 	managers.Any("/{id}", handle.ManagersMethodNotAllowed)
 
-	updateService := v1.Party("/UpdateService", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+	updateService := v1.Party("/UpdateService", middleware.SessionDelMiddleware)
 	updateService.SetRegisterRule(iris.RouteSkip)
 	updateService.Get("/", update.GetUpdateService)
 	updateService.Post("/Actions/UpdateService.SimpleUpdate", update.SimpleUpdate)
@@ -704,7 +703,7 @@ func Router() *iris.Application {
 	updateService.Any("/Actions/UpdateService.SimpleUpdate", handle.UpdateServiceMethodNotAllowed)
 	updateService.Any("/Actions/UpdateService.StartUpdate", handle.UpdateServiceMethodNotAllowed)
 
-	telemetryService := v1.Party("/TelemetryService", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+	telemetryService := v1.Party("/TelemetryService", middleware.SessionDelMiddleware)
 	telemetryService.SetRegisterRule(iris.RouteSkip)
 	telemetryService.Get("/", telemetry.GetTelemetryService)
 	telemetryService.Get("/MetricDefinitions", telemetry.GetMetricDefinitionCollection)
@@ -725,7 +724,7 @@ func Router() *iris.Application {
 	telemetryService.Any("/MetricReports/{id}", handle.MethodNotAllowed)
 	telemetryService.Any("/Triggers/{id}", handle.MethodNotAllowed)
 
-	licenseService := v1.Party("/LicenseService", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+	licenseService := v1.Party("/LicenseService", middleware.SessionDelMiddleware)
 	licenseService.SetRegisterRule(iris.RouteSkip)
 	licenseService.Get("/", licenses.GetLicenseService)
 	licenseService.Get("/Licenses", licenses.GetLicenseCollection)
@@ -737,7 +736,7 @@ func Router() *iris.Application {
 
 	// composition service
 	if isCompositionEnabled {
-		compositionService := v1.Party("/CompositionService", middleware.RedirectHTTPtoHTTPS, middleware.SessionDelMiddleware)
+		compositionService := v1.Party("/CompositionService", middleware.SessionDelMiddleware)
 		compositionService.SetRegisterRule(iris.RouteSkip)
 		compositionService.Get("/", cs.GetCompositionService)
 		compositionService.Get("/ResourceBlocks", cs.GetResourceBlockCollection)

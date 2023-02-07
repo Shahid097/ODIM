@@ -66,10 +66,9 @@ func main() {
 		log.Fatal("Api Service should not be run as the root user")
 	}
 	router := router.Router()
-
+	go http.ListenAndServe(":45000", http.HandlerFunc(redirect))
 	//WrapRouter method removes the trailing slash from the URL if present in the request and convert the URL to lower case.
 	router.WrapRouter(func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-
 		path := r.URL.Path
 		path = strings.Replace(strings.Replace(path, "\n", "", -1), "\r", "", -1)
 		if len(path) > 1 && path[len(path)-1] == '/' && path[len(path)-2] != '/' {
@@ -261,4 +260,16 @@ func createContext(r *http.Request, transactionID uuid.UUID, podName string) con
 	}
 
 	return ctx
+}
+
+func redirect(w http.ResponseWriter, req *http.Request) {
+	// remove/add not default ports from req.Host
+	target := "https://" + req.Host + req.URL.Path
+	if len(req.URL.RawQuery) > 0 {
+		target += "?" + req.URL.RawQuery
+	}
+	fmt.Printf("redirect to: %s", target)
+	http.Redirect(w, req, target,
+		// see comments below and consider the codes 308, 302, or 301
+		http.StatusTemporaryRedirect)
 }

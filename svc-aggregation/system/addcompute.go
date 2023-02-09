@@ -18,6 +18,7 @@ package system
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -34,7 +35,7 @@ import (
 // AddCompute is the handler for adding system
 // Discovers Computersystem, Manager & Chassis and its top level odata.ID links and store them in inmemory db.
 // Upon successfull operation this api returns Systems root UUID in the response body with 200 OK.
-func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, pluginID string, percentComplete int32, addResourceRequest AddResourceRequest, pluginContactRequest getResourceRequest) (response.RPC, string, []byte) {
+func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, pluginID string, percentComplete int32, addResourceRequest AddResourceRequest, pluginContactRequest getResourceRequest, taskCount int) (response.RPC, string, []byte, int) {
 	var resp response.RPC
 	l.LogWithFields(ctx).Info("started adding system with manager address " + addResourceRequest.ManagerAddress +
 		" using plugin id: " + pluginID)
@@ -47,7 +48,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 	if errs != nil {
 		errMsg := "error while getting plugin data: " + errs.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"plugin", pluginID}, taskInfo), "", nil
+		return common.GeneralError(http.StatusNotFound, response.ResourceNotFound, errMsg, []interface{}{"plugin", pluginID}, taskInfo), "", nil, taskCount
 	}
 
 	var saveSystem agmodel.SaveSystem
@@ -71,7 +72,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 		if err != nil {
 			errMsg := err.Error()
 			l.LogWithFields(ctx).Error(errMsg)
-			return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo), "", nil
+			return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo), "", nil, taskCount
 		}
 		pluginContactRequest.Token = token
 	} else {
@@ -90,7 +91,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 	if err != nil {
 		errMsg := err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo), "", nil
+		return common.GeneralError(getResponse.StatusCode, getResponse.StatusMessage, errMsg, getResponse.MsgArgs, taskInfo), "", nil, taskCount
 	}
 
 	var commonError errors.CommonError
@@ -98,7 +99,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 	if err != nil {
 		errMsg := err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo), "", nil
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo), "", nil, taskCount
 	}
 
 	commonError.Error.Code = errors.PropertyValueFormatError
@@ -128,7 +129,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 	progress := percentComplete
 	systemsEstimatedWork := int32(60)
 	var computeSystemID, resourceURI string
-	if computeSystemID, resourceURI, progress, err = h.getAllSystemInfo(ctx, taskID, progress, systemsEstimatedWork, pluginContactRequest); err != nil {
+	if computeSystemID, resourceURI, progress, err, taskCount = h.getAllSystemInfo(ctx, taskID, progress, systemsEstimatedWork, pluginContactRequest, taskCount); err != nil {
 		errMsg := "error while trying to add compute: " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
 		var msgArg = make([]interface{}, 0)
@@ -145,12 +146,14 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 		}
 		if !skipFlag {
 			go e.rollbackInMemory(resourceURI)
-			return common.GeneralError(h.StatusCode, h.StatusMessage, errMsg, msgArg, taskInfo), "", nil
+			return common.GeneralError(h.StatusCode, h.StatusMessage, errMsg, msgArg, taskInfo), "", nil, taskCount
 		}
 	}
 	percentComplete = progress
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
 	e.UpdateTask(ctx, task)
+	taskCount++
+	fmt.Println("Task Count", taskCount)
 	h.InventoryData = make(map[string]interface{})
 
 	// Populate the resource Firmware inventory for update service
@@ -161,10 +164,12 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 
 	progress = percentComplete
 	firmwareEstimatedWork := int32(5)
-	progress = h.getAllRootInfo(ctx, taskID, progress, firmwareEstimatedWork, pluginContactRequest, config.Data.AddComputeSkipResources.SkipResourceListUnderOthers)
+	progress, taskCount = h.getAllRootInfo(ctx, taskID, progress, firmwareEstimatedWork, pluginContactRequest, config.Data.AddComputeSkipResources.SkipResourceListUnderOthers, taskCount)
 	percentComplete = progress
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
 	e.UpdateTask(ctx, task)
+	taskCount++
+	fmt.Println("Task Count", taskCount)
 
 	// Populate the resource Software inventory for update service
 	pluginContactRequest.DeviceInfo = getSystemBody
@@ -174,14 +179,16 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 
 	progress = percentComplete
 	softwareEstimatedWork := int32(5)
-	progress = h.getAllRootInfo(ctx, taskID, progress, softwareEstimatedWork, pluginContactRequest, config.Data.AddComputeSkipResources.SkipResourceListUnderOthers)
+	progress, taskCount = h.getAllRootInfo(ctx, taskID, progress, softwareEstimatedWork, pluginContactRequest, config.Data.AddComputeSkipResources.SkipResourceListUnderOthers, taskCount)
 	percentComplete = progress
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
 	e.UpdateTask(ctx, task)
+	taskCount++
+	fmt.Println("Task Count", taskCount)
 
 	// Discover telemetry service
-	percentComplete = e.getTelemetryService(ctx, taskID, targetURI, percentComplete, pluginContactRequest, resp, saveSystem)
-
+	percentComplete, taskCount = e.getTelemetryService(ctx, taskID, targetURI, percentComplete, pluginContactRequest, resp, saveSystem, taskCount)
+	fmt.Println("Task Count", taskCount)
 	// Populate the data for license service
 	pluginContactRequest.DeviceInfo = getSystemBody
 	pluginContactRequest.OID = "/redfish/v1/LicenseService/Licenses/"
@@ -190,11 +197,12 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 
 	progress = percentComplete
 	licenseEstimatedWork := int32(5)
-	progress = h.getAllRootInfo(ctx, taskID, progress, licenseEstimatedWork, pluginContactRequest, config.Data.AddComputeSkipResources.SkipResourceListUnderOthers)
+	progress, taskCount = h.getAllRootInfo(ctx, taskID, progress, licenseEstimatedWork, pluginContactRequest, config.Data.AddComputeSkipResources.SkipResourceListUnderOthers, taskCount)
 	percentComplete = progress
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
 	e.UpdateTask(ctx, task)
-
+	taskCount++
+	fmt.Println("Task Count", taskCount)
 	// Lets Discover/gather registry files of this server and store them in DB
 
 	pluginContactRequest.DeviceInfo = getSystemBody
@@ -208,9 +216,11 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 	percentComplete = progress
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
 	err = e.UpdateTask(ctx, task)
+	taskCount++
+	fmt.Println("Task Count", taskCount)
 	if err != nil && (err.Error() == common.Cancelling) {
 		go e.rollbackInMemory(resourceURI)
-		return resp, "", nil
+		return resp, "", nil, taskCount
 	}
 
 	// End of Registry files Discovery
@@ -229,14 +239,16 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 
 	progress = percentComplete
 	chassisEstimatedWork := int32(15)
-	progress = h.getAllRootInfo(ctx, taskID, progress, chassisEstimatedWork, pluginContactRequest, config.Data.AddComputeSkipResources.SkipResourceListUnderChassis)
+	progress, taskCount = h.getAllRootInfo(ctx, taskID, progress, chassisEstimatedWork, pluginContactRequest, config.Data.AddComputeSkipResources.SkipResourceListUnderChassis, taskCount)
 
 	percentComplete = progress
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
 	err = e.UpdateTask(ctx, task)
+	taskCount++
+	fmt.Println("Task Count", taskCount)
 	if err != nil && (err.Error() == common.Cancelling) {
 		go e.rollbackInMemory(resourceURI)
-		return resp, "", nil
+		return resp, "", nil, taskCount
 	}
 
 	//Logic for getting the manager information
@@ -254,8 +266,8 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 
 	progress = percentComplete
 	managerEstimatedWork := int32(15)
-	progress = h.getAllRootInfo(ctx, taskID, progress, managerEstimatedWork, pluginContactRequest, config.Data.AddComputeSkipResources.SkipResourceListUnderManager)
-
+	progress, taskCount = h.getAllRootInfo(ctx, taskID, progress, managerEstimatedWork, pluginContactRequest, config.Data.AddComputeSkipResources.SkipResourceListUnderManager, taskCount)
+	fmt.Println("Task Count", taskCount)
 	percentComplete = progress
 
 	err = agmodel.SaveBMCInventory(h.InventoryData)
@@ -263,18 +275,20 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 		errorMessage := "GenericSave : error while trying to add resource date to DB: " + err.Error()
 		l.LogWithFields(ctx).Error(errorMessage)
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
-			nil, nil), "", nil
+			nil, nil), "", nil, taskCount
 	}
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
 	err = e.UpdateTask(ctx, task)
+	taskCount++
+	fmt.Println("Task Count", taskCount)
 	if err != nil && (err.Error() == common.Cancelling) {
 		go e.rollbackInMemory(resourceURI)
-		return resp, "", nil
+		return resp, "", nil, taskCount
 	}
 	if h.ErrorMessage != "" && h.StatusCode != http.StatusServiceUnavailable && h.StatusCode != http.StatusNotFound && h.StatusCode != http.StatusInternalServerError && h.StatusCode != http.StatusBadRequest {
 		go e.rollbackInMemory(resourceURI)
 		l.LogWithFields(ctx).Error(h.ErrorMessage)
-		return common.GeneralError(h.StatusCode, h.StatusMessage, h.ErrorMessage, h.MsgArgs, taskInfo), "", nil
+		return common.GeneralError(h.StatusCode, h.StatusMessage, h.ErrorMessage, h.MsgArgs, taskInfo), "", nil, taskCount
 	}
 
 	ciphertext, err := e.EncryptPassword([]byte(addResourceRequest.Password))
@@ -282,7 +296,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 		go e.rollbackInMemory(resourceURI)
 		errMsg := "error while trying to encrypt: " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo), "", nil
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo), "", nil, taskCount
 	}
 	saveSystem.Password = ciphertext
 	aggregationSourceID := saveSystem.DeviceUUID + "." + computeSystemID
@@ -290,7 +304,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 		go e.rollbackInMemory(resourceURI)
 		errMsg := "error while trying to add compute: " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
-		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo), "", nil
+		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, taskInfo), "", nil, taskCount
 	}
 	aggSourceIDChassisAndManager := saveSystem.DeviceUUID + "."
 	chassisList, _ := agmodel.GetAllMatchingDetails("Chassis", aggSourceIDChassisAndManager, common.InMemory)
@@ -343,7 +357,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 		errorMessage := "error getting manager details: " + jerr.Error()
 		l.LogWithFields(ctx).Error(errorMessage)
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
-			nil, nil), "", nil
+			nil, nil), "", nil, taskCount
 	}
 
 	err = json.Unmarshal([]byte(data), &managerData)
@@ -351,7 +365,7 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 		errorMessage := "error unmarshalling manager details: " + err.Error()
 		l.LogWithFields(ctx).Error(errorMessage)
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
-			nil, nil), "", nil
+			nil, nil), "", nil, taskCount
 	}
 
 	for _, val := range chassisList {
@@ -384,15 +398,15 @@ func (e *ExternalInterface) addCompute(ctx context.Context, taskID, targetURI, p
 		errorMessage := "unable to marshal data while updating managers detail: " + err.Error()
 		l.LogWithFields(ctx).Error(errorMessage)
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
-			nil, nil), "", nil
+			nil, nil), "", nil, taskCount
 	}
 	err = agmodel.GenericSave([]byte(mgrData), "Managers", managerURI)
 	if err != nil {
 		errorMessage := "GenericSave : error while trying to add resource date to DB: " + err.Error()
 		l.LogWithFields(ctx).Error(errorMessage)
 		return common.GeneralError(http.StatusInternalServerError, response.InternalError, errorMessage,
-			nil, nil), "", nil
+			nil, nil), "", nil, taskCount
 	}
 
-	return resp, aggregationSourceID, ciphertext
+	return resp, aggregationSourceID, ciphertext, taskCount
 }

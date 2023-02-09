@@ -351,7 +351,7 @@ func TestExternalInterface_addcompute(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _, _ := tt.p.addCompute(ctx, tt.args.taskID, targetURI, tt.args.pluginID, percentComplete, tt.args.req, pluginContactRequest); !reflect.DeepEqual(got.StatusCode, tt.want.StatusCode) {
+			if got, _, _, _ := tt.p.addCompute(ctx, tt.args.taskID, targetURI, tt.args.pluginID, percentComplete, tt.args.req, pluginContactRequest, 1); !reflect.DeepEqual(got.StatusCode, tt.want.StatusCode) {
 				t.Errorf("ExternalInterface.addCompute = %v, want %v", got, tt.want)
 			}
 		})

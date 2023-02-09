@@ -373,7 +373,7 @@ func keyFormation(oid, systemID, DeviceUUID string) string {
 	return strings.Join(key, "/")
 }
 
-func (h *respHolder) getAllSystemInfo(ctx context.Context, taskID string, progress int32, alottedWork int32, req getResourceRequest) (string, string, int32, error) {
+func (h *respHolder) getAllSystemInfo(ctx context.Context, taskID string, progress int32, alottedWork int32, req getResourceRequest, taskCount int) (string, string, int32, error, int) {
 	var computeSystemID, resourceURI string
 	body, _, getResponse, err := contactPlugin(ctx, req, "error while trying to get system collection details: ")
 	if err != nil {
@@ -385,7 +385,7 @@ func (h *respHolder) getAllSystemInfo(ctx context.Context, taskID string, progre
 		h.MsgArgs = getResponse.MsgArgs
 		h.lock.Unlock()
 		l.LogWithFields(ctx).Error(err)
-		return computeSystemID, resourceURI, progress, err
+		return computeSystemID, resourceURI, progress, err, taskCount
 	}
 	h.SystemURL = make([]string, 0)
 	h.PluginResponse = string(body)
@@ -398,7 +398,7 @@ func (h *respHolder) getAllSystemInfo(ctx context.Context, taskID string, progre
 		h.StatusCode = http.StatusInternalServerError
 		h.lock.Unlock()
 		l.LogWithFields(ctx).Error("error while trying unmarshal systems collection: " + err.Error())
-		return computeSystemID, resourceURI, progress, err
+		return computeSystemID, resourceURI, progress, err, taskCount
 	}
 	systemMembers := systemsMap["Members"]
 	// Loop through System collection members and discover all of them
@@ -409,15 +409,15 @@ func (h *respHolder) getAllSystemInfo(ctx context.Context, taskID string, progre
 		oDataID := object.(map[string]interface{})["@odata.id"].(string)
 		oDataID = strings.TrimSuffix(oDataID, "/")
 		req.OID = oDataID
-		if computeSystemID, resourceURI, progress, err = h.getSystemInfo(ctx, taskID, progress, estimatedWork, req); err != nil {
+		if computeSystemID, resourceURI, progress, err, taskCount = h.getSystemInfo(ctx, taskID, progress, estimatedWork, req, taskCount); err != nil {
 			errorMessage += oDataID + ":err-" + err.Error() + "; "
 			foundErr = true
 		}
 	}
 	if foundErr {
-		return computeSystemID, resourceURI, progress, fmt.Errorf("%s]", errorMessage)
+		return computeSystemID, resourceURI, progress, fmt.Errorf("%s]", errorMessage), taskCount
 	}
-	return computeSystemID, resourceURI, progress, nil
+	return computeSystemID, resourceURI, progress, nil, taskCount
 }
 
 // Registries Discovery function
@@ -587,7 +587,7 @@ func isFileExist(existingFiles []string, substr string) bool {
 	return fileExist
 }
 
-func (h *respHolder) getAllRootInfo(ctx context.Context, taskID string, progress int32, alottedWork int32, req getResourceRequest, resourceList []string) int32 {
+func (h *respHolder) getAllRootInfo(ctx context.Context, taskID string, progress int32, alottedWork int32, req getResourceRequest, resourceList []string, taskCount int) (int32, int) {
 	resourceName := req.OID
 	body, _, getResponse, err := contactPlugin(ctx, req, "error while trying to get the"+resourceName+"collection details: ")
 	if err != nil {
@@ -598,7 +598,7 @@ func (h *respHolder) getAllRootInfo(ctx context.Context, taskID string, progress
 		h.MsgArgs = getResponse.MsgArgs
 		h.lock.Unlock()
 		l.LogWithFields(ctx).Error(err)
-		return progress
+		return progress, taskCount
 	}
 
 	resourceMap := make(map[string]interface{})
@@ -610,7 +610,7 @@ func (h *respHolder) getAllRootInfo(ctx context.Context, taskID string, progress
 		h.StatusCode = http.StatusInternalServerError
 		h.lock.Unlock()
 		l.LogWithFields(ctx).Error("error while trying to unmarshal " + resourceName + ": " + err.Error())
-		return progress
+		return progress, taskCount
 
 	}
 
@@ -622,13 +622,13 @@ func (h *respHolder) getAllRootInfo(ctx context.Context, taskID string, progress
 			oDataID := object.(map[string]interface{})["@odata.id"].(string)
 			oDataID = strings.TrimSuffix(oDataID, "/")
 			req.OID = oDataID
-			progress = h.getIndivdualInfo(ctx, taskID, progress, estimatedWork, req, resourceList)
+			progress, taskCount = h.getIndivdualInfo(ctx, taskID, progress, estimatedWork, req, resourceList, taskCount)
 		}
 	}
-	return progress
+	return progress, taskCount
 }
 
-func (h *respHolder) getSystemInfo(ctx context.Context, taskID string, progress int32, alottedWork int32, req getResourceRequest) (string, string, int32, error) {
+func (h *respHolder) getSystemInfo(ctx context.Context, taskID string, progress int32, alottedWork int32, req getResourceRequest, taskCount int) (string, string, int32, error, int) {
 	var computeSystemID, oidKey string
 	body, _, getResponse, err := contactPlugin(ctx, req, "error while trying to get system collection details: ")
 	if err != nil {
@@ -641,7 +641,7 @@ func (h *respHolder) getSystemInfo(ctx context.Context, taskID string, progress 
 		}
 		h.StatusCode = getResponse.StatusCode
 		h.lock.Unlock()
-		return computeSystemID, oidKey, progress, err
+		return computeSystemID, oidKey, progress, err, taskCount
 	}
 
 	var computeSystem map[string]interface{}
@@ -652,7 +652,7 @@ func (h *respHolder) getSystemInfo(ctx context.Context, taskID string, progress 
 		h.StatusMessage = response.InternalError
 		h.StatusCode = http.StatusInternalServerError
 		h.lock.Unlock()
-		return computeSystemID, oidKey, progress, err
+		return computeSystemID, oidKey, progress, err, taskCount
 	}
 
 	oid := computeSystem["@odata.id"].(string)
@@ -667,7 +667,7 @@ func (h *respHolder) getSystemInfo(ctx context.Context, taskID string, progress 
 			h.StatusCode = http.StatusInternalServerError
 			h.StatusMessage = response.InternalError
 			h.lock.Unlock()
-			return computeSystemID, oidKey, progress, err
+			return computeSystemID, oidKey, progress, err, taskCount
 		}
 		if len(indexList) > 0 {
 			h.lock.Lock()
@@ -676,7 +676,7 @@ func (h *respHolder) getSystemInfo(ctx context.Context, taskID string, progress 
 			h.ErrorMessage = "Resource already exists"
 			h.MsgArgs = []interface{}{"ComputerSystem", "ComputerSystem", "ComputerSystem"}
 			h.lock.Unlock()
-			return computeSystemID, oidKey, progress, fmt.Errorf(h.ErrorMessage)
+			return computeSystemID, oidKey, progress, fmt.Errorf(h.ErrorMessage), taskCount
 		}
 
 	}
@@ -696,7 +696,7 @@ func (h *respHolder) getSystemInfo(ctx context.Context, taskID string, progress 
 		resourceOID = strings.TrimSuffix(resourceOID, "/")
 		req.OID = resourceOID
 		req.OemFlag = oemFlag
-		progress = h.getResourceDetails(ctx, taskID, progress, estimatedWork, req)
+		progress, taskCount = h.getResourceDetails(ctx, taskID, progress, estimatedWork, req, taskCount)
 	}
 	json.Unmarshal([]byte(updatedResourceData), &computeSystem)
 	err = agmodel.SaveBMCInventory(h.InventoryData)
@@ -706,7 +706,7 @@ func (h *respHolder) getSystemInfo(ctx context.Context, taskID string, progress 
 		h.StatusMessage = response.InternalError
 		h.StatusCode = http.StatusInternalServerError
 		h.lock.Unlock()
-		return computeSystemID, oidKey, progress, err
+		return computeSystemID, oidKey, progress, err, taskCount
 	}
 
 	searchForm := createServerSearchIndex(ctx, computeSystem, oidKey, req.DeviceUUID)
@@ -720,13 +720,13 @@ func (h *respHolder) getSystemInfo(ctx context.Context, taskID string, progress 
 		h.ErrorMessage = "error while trying save index values: " + err.Error()
 		h.StatusMessage = response.InternalError
 		h.StatusCode = http.StatusInternalServerError
-		return computeSystemID, oidKey, progress, err
+		return computeSystemID, oidKey, progress, err, taskCount
 	}
-	return computeSystemID, oidKey, progress, nil
+	return computeSystemID, oidKey, progress, nil, taskCount
 }
 
 // getStorageInfo is used to rediscover storage data from a system
-func (h *respHolder) getStorageInfo(ctx context.Context, progress int32, alottedWork int32, req getResourceRequest) (string, int32, error) {
+func (h *respHolder) getStorageInfo(ctx context.Context, progress int32, alottedWork int32, req getResourceRequest, taskCount int) (string, int32, error, int) {
 	body, _, getResponse, err := contactPlugin(ctx, req, "error while trying to get system storage collection details: ")
 	if err != nil {
 		h.lock.Lock()
@@ -738,7 +738,7 @@ func (h *respHolder) getStorageInfo(ctx context.Context, progress int32, alotted
 		}
 		h.StatusCode = getResponse.StatusCode
 		h.lock.Unlock()
-		return "", progress, err
+		return "", progress, err, taskCount
 	}
 
 	var computeSystem map[string]interface{}
@@ -749,7 +749,7 @@ func (h *respHolder) getStorageInfo(ctx context.Context, progress int32, alotted
 		h.StatusMessage = response.InternalError
 		h.StatusCode = http.StatusInternalServerError
 		h.lock.Unlock()
-		return "", progress, err
+		return "", progress, err, taskCount
 	}
 
 	// Read system data from DB
@@ -758,13 +758,13 @@ func (h *respHolder) getStorageInfo(ctx context.Context, progress int32, alotted
 	data, dbErr := agmodel.GetResource("ComputerSystem", systemURI)
 	if dbErr != nil {
 		errMsg := fmt.Errorf("error while getting the systems data %v", dbErr.Error())
-		return "", progress, errMsg
+		return "", progress, errMsg, taskCount
 	}
 	// unmarshall the systems data
 	var systemData map[string]interface{}
 	err = json.Unmarshal([]byte(data), &systemData)
 	if err != nil {
-		return "", progress, err
+		return "", progress, err, taskCount
 	}
 
 	oid := computeSystem["@odata.id"].(string)
@@ -782,7 +782,7 @@ func (h *respHolder) getStorageInfo(ctx context.Context, progress int32, alotted
 		h.StatusMessage = response.InternalError
 		h.StatusCode = http.StatusInternalServerError
 		h.lock.Unlock()
-		return oidKey, progress, err
+		return oidKey, progress, err, taskCount
 	}
 	h.TraversedLinks[req.OID] = true
 	h.SystemURL = append(h.SystemURL, oidKey)
@@ -797,7 +797,7 @@ func (h *respHolder) getStorageInfo(ctx context.Context, progress int32, alotted
 		req.OID = resourceOID
 		req.OemFlag = oemFlag
 		// Passing taskid as empty string
-		progress = h.getResourceDetails(ctx, "", progress, estimatedWork, req)
+		progress, taskCount = h.getResourceDetails(ctx, "", progress, estimatedWork, req, taskCount)
 	}
 	json.Unmarshal([]byte(updatedResourceData), &computeSystem)
 	searchForm := createServerSearchIndex(ctx, computeSystem, systemURI, req.DeviceUUID)
@@ -809,9 +809,9 @@ func (h *respHolder) getStorageInfo(ctx context.Context, progress int32, alotted
 		h.ErrorMessage = "error while trying save index values: " + err.Error()
 		h.StatusMessage = response.InternalError
 		h.StatusCode = http.StatusInternalServerError
-		return oidKey, progress, err
+		return oidKey, progress, err, taskCount
 	}
-	return oidKey, progress, nil
+	return oidKey, progress, nil, taskCount
 }
 
 func createServerSearchIndex(ctx context.Context, computeSystem map[string]interface{}, oidKey, deviceUUID string) map[string]interface{} {
@@ -888,7 +888,7 @@ func createServerSearchIndex(ctx context.Context, computeSystem map[string]inter
 	}
 	return searchForm
 }
-func (h *respHolder) getIndivdualInfo(ctx context.Context, taskID string, progress int32, alottedWork int32, req getResourceRequest, resourceList []string) int32 {
+func (h *respHolder) getIndivdualInfo(ctx context.Context, taskID string, progress int32, alottedWork int32, req getResourceRequest, resourceList []string, taskCount int) (int32, int) {
 	resourceName := getResourceName(req.OID, false)
 	body, _, getResponse, err := contactPlugin(ctx, req, "error while trying to get "+resourceName+" details: ")
 	if err != nil {
@@ -897,7 +897,7 @@ func (h *respHolder) getIndivdualInfo(ctx context.Context, taskID string, progre
 		h.StatusMessage = getResponse.StatusMessage
 		h.StatusCode = getResponse.StatusCode
 		h.lock.Unlock()
-		return progress
+		return progress, taskCount
 	}
 	var resource map[string]interface{}
 	err = json.Unmarshal(body, &resource)
@@ -907,7 +907,7 @@ func (h *respHolder) getIndivdualInfo(ctx context.Context, taskID string, progre
 		h.StatusMessage = response.InternalError
 		h.StatusCode = http.StatusInternalServerError
 		h.lock.Unlock()
-		return progress
+		return progress, taskCount
 	}
 	oid := resource["@odata.id"].(string)
 	resourceID := resource["Id"].(string)
@@ -929,12 +929,12 @@ func (h *respHolder) getIndivdualInfo(ctx context.Context, taskID string, progre
 		resourceOID = strings.TrimSuffix(resourceOID, "/")
 		req.OID = resourceOID
 		req.OemFlag = oemFlag
-		progress = h.getResourceDetails(ctx, taskID, progress, estimatedWork, req)
+		progress, taskCount = h.getResourceDetails(ctx, taskID, progress, estimatedWork, req, taskCount)
 	}
-	return progress
+	return progress, taskCount
 }
 
-func (h *respHolder) getResourceDetails(ctx context.Context, taskID string, progress int32, alottedWork int32, req getResourceRequest) int32 {
+func (h *respHolder) getResourceDetails(ctx context.Context, taskID string, progress int32, alottedWork int32, req getResourceRequest, taskCount int) (int32, int) {
 	h.TraversedLinks[req.OID] = true
 	body, _, getResponse, err := contactPlugin(ctx, req, "error while trying to get the "+req.OID+" details: ")
 	if err != nil {
@@ -944,7 +944,7 @@ func (h *respHolder) getResourceDetails(ctx context.Context, taskID string, prog
 		h.MsgArgs = getResponse.MsgArgs
 		h.StatusCode = getResponse.StatusCode
 		h.lock.Unlock()
-		return progress
+		return progress, taskCount
 	}
 	var resourceData map[string]interface{}
 	err = json.Unmarshal(body, &resourceData)
@@ -955,7 +955,7 @@ func (h *respHolder) getResourceDetails(ctx context.Context, taskID string, prog
 		h.StatusMessage = response.InternalError
 		l.LogWithFields(ctx).Error(h.ErrorMessage)
 		h.lock.Unlock()
-		return progress
+		return progress, taskCount
 	}
 
 	oidKey := req.OID
@@ -1008,19 +1008,21 @@ func (h *respHolder) getResourceDetails(ctx context.Context, taskID string, prog
 			childReq.OID = oid
 			childReq.ParentOID = req.OID
 			childReq.OemFlag = oemFlag
-			progress = h.getResourceDetails(ctx, taskID, progress, estimatedWork, childReq)
+			progress, taskCount = h.getResourceDetails(ctx, taskID, progress, estimatedWork, childReq, taskCount)
 		}
 	}
 	progress = progress + alottedWork
 	var task = fillTaskData(taskID, req.TargetURI, req.TaskRequest, response.RPC{}, common.Running, common.OK, progress, http.MethodPost)
 	err = req.UpdateTask(ctx, task)
+	taskCount++
+	fmt.Println("Task Count", taskCount)
 
 	if err != nil && (err.Error() == common.Cancelling) {
 		var task = fillTaskData(taskID, req.TargetURI, req.TaskRequest, response.RPC{}, common.Cancelled, common.OK, progress, http.MethodPost)
 		req.UpdateTask(ctx, task)
 
 	}
-	return progress
+	return progress, taskCount
 }
 func getResourceName(oDataID string, memberFlag bool) string {
 	str := strings.Split(oDataID, "/")
@@ -1359,7 +1361,7 @@ func getConnectionMethodVariants(connectionMethodVariant string) connectionMetho
 	}
 }
 
-func (e *ExternalInterface) getTelemetryService(ctx context.Context, taskID, targetURI string, percentComplete int32, pluginContactRequest getResourceRequest, resp response.RPC, saveSystem agmodel.SaveSystem) int32 {
+func (e *ExternalInterface) getTelemetryService(ctx context.Context, taskID, targetURI string, percentComplete int32, pluginContactRequest getResourceRequest, resp response.RPC, saveSystem agmodel.SaveSystem, taskCount int) (int32, int) {
 	deviceInfo := map[string]interface{}{
 		"ManagerAddress": saveSystem.ManagerAddress,
 		"UserName":       saveSystem.UserName,
@@ -1381,6 +1383,8 @@ func (e *ExternalInterface) getTelemetryService(ctx context.Context, taskID, tar
 	percentComplete = progress
 	task := fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
 	e.UpdateTask(ctx, task)
+	taskCount++
+	fmt.Println("Task Count", taskCount)
 
 	// Populate the MetricReportDefinitions for telemetry service
 	progress = percentComplete
@@ -1392,6 +1396,8 @@ func (e *ExternalInterface) getTelemetryService(ctx context.Context, taskID, tar
 	percentComplete = progress
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
 	e.UpdateTask(ctx, task)
+	taskCount++
+	fmt.Println("Task Count", taskCount)
 
 	// Populate the MetricReports for telemetry service
 	var metricReportEstimatedWork int32
@@ -1404,6 +1410,8 @@ func (e *ExternalInterface) getTelemetryService(ctx context.Context, taskID, tar
 	percentComplete = progress + metricReportEstimatedWork
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
 	e.UpdateTask(ctx, task)
+	taskCount++
+	fmt.Println("Task Count", taskCount)
 
 	// Populate the Triggers for telemetry service
 	pluginContactRequest.OID = "/redfish/v1/TelemetryService/Triggers"
@@ -1415,7 +1423,9 @@ func (e *ExternalInterface) getTelemetryService(ctx context.Context, taskID, tar
 	percentComplete = progress
 	task = fillTaskData(taskID, targetURI, pluginContactRequest.TaskRequest, resp, common.Running, common.OK, percentComplete, http.MethodPost)
 	e.UpdateTask(ctx, task)
-	return percentComplete
+	taskCount++
+	fmt.Println("Task Count", taskCount)
+	return percentComplete, taskCount
 }
 
 func (e *ExternalInterface) storeTelemetryCollectionInfo(ctx context.Context, resourceName, taskID string, progress, alottedWork int32, req getResourceRequest) (int32, error) {

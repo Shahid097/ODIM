@@ -36,8 +36,11 @@ func (e *ExternalInterface) AddAggregationSource(ctx context.Context, taskID str
 	targetURI := "/redfish/v1/AggregationService/AggregationSources"
 	var resp response.RPC
 	var percentComplete int32
+	fmt.Println("Task Update 1")
+	taskCount := 1
 	var task = fillTaskData(taskID, targetURI, string(req.RequestBody), resp, common.Running, common.OK, percentComplete, http.MethodPost)
 	err := e.UpdateTask(ctx, task)
+	fmt.Println("Task Update ", taskCount)
 	if err != nil {
 		errMsg := "error while starting the task: " + err.Error()
 		l.LogWithFields(ctx).Error(errMsg)
@@ -70,10 +73,10 @@ func (e *ExternalInterface) AddAggregationSource(ctx context.Context, taskID str
 		l.LogWithFields(ctx).Error(errMsg)
 		return common.GeneralError(http.StatusBadRequest, response.PropertyMissing, errMsg, []interface{}{"ConnectionMethod"}, taskInfo)
 	}
-	return e.addAggregationSource(ctx, taskID, targetURI, string(req.RequestBody), percentComplete, aggregationSourceRequest, taskInfo)
+	return e.addAggregationSource(ctx, taskID, targetURI, string(req.RequestBody), percentComplete, aggregationSourceRequest, taskInfo, taskCount)
 }
 
-func (e *ExternalInterface) addAggregationSource(ctx context.Context, taskID, targetURI, reqBody string, percentComplete int32, aggregationSourceRequest AggregationSource, taskInfo *common.TaskUpdateInfo) response.RPC {
+func (e *ExternalInterface) addAggregationSource(ctx context.Context, taskID, targetURI, reqBody string, percentComplete int32, aggregationSourceRequest AggregationSource, taskInfo *common.TaskUpdateInfo, taskCount int) response.RPC {
 	var resp response.RPC
 	var addResourceRequest = AddResourceRequest{
 		ManagerAddress:   aggregationSourceRequest.HostName,
@@ -158,7 +161,7 @@ func (e *ExternalInterface) addAggregationSource(ctx context.Context, taskID, ta
 		}
 		resp, aggregationSourceUUID, cipherText = e.addPluginData(ctx, addResourceRequest, taskID, targetURI, pluginContactRequest, queueList, cmVariants)
 	} else if statusCode == http.StatusNotFound {
-		resp, aggregationSourceUUID, cipherText = e.addCompute(ctx, taskID, targetURI, cmVariants.PluginID, percentComplete, addResourceRequest, pluginContactRequest)
+		resp, aggregationSourceUUID, cipherText, taskCount = e.addCompute(ctx, taskID, targetURI, cmVariants.PluginID, percentComplete, addResourceRequest, pluginContactRequest, taskCount)
 	} else {
 		return statusResp
 	}
@@ -213,5 +216,7 @@ func (e *ExternalInterface) addAggregationSource(ctx context.Context, taskID, ta
 
 	task := fillTaskData(taskID, targetURI, reqBody, resp, common.Completed, common.OK, percentComplete, http.MethodPost)
 	e.UpdateTask(ctx, task)
+	taskCount++
+	fmt.Println("Task Count", taskCount)
 	return resp
 }

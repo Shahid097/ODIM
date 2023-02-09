@@ -40,7 +40,7 @@ const (
 )
 
 // RediscoverSystemInventory  is the handler for redicovering system whenever the restrat event detected in event service
-//It deletes old data and  Discovers Computersystem & Chassis and its top level odata.ID links and store them in inmemory db.
+// It deletes old data and  Discovers Computersystem & Chassis and its top level odata.ID links and store them in inmemory db.
 func (e *ExternalInterface) RediscoverSystemInventory(ctx context.Context, deviceUUID, systemURL string, updateFlag bool) {
 	l.LogWithFields(ctx).Info("Rediscovery of the BMC with ID " + deviceUUID + " is started.")
 
@@ -153,19 +153,19 @@ func (e *ExternalInterface) RediscoverSystemInventory(ctx context.Context, devic
 	progress := int32(100)
 	systemsEstimatedWork := int32(75)
 	if strings.Contains(systemURL, "/Storage") {
-		_, progress, _ = h.getStorageInfo(ctx, progress, systemsEstimatedWork, req)
+		_, progress, _, _ = h.getStorageInfo(ctx, progress, systemsEstimatedWork, req, 1)
 	} else {
-		_, _, progress, _ = h.getSystemInfo(ctx, "", progress, systemsEstimatedWork, req)
+		_, _, progress, _, _ = h.getSystemInfo(ctx, "", progress, systemsEstimatedWork, req, 1)
 		h.InventoryData = make(map[string]interface{})
 		//rediscovering the Chassis Information
 		req.OID = "/redfish/v1/Chassis"
 		chassisEstimatedWork := int32(15)
-		progress = h.getAllRootInfo(ctx, "", progress, chassisEstimatedWork, req, config.Data.AddComputeSkipResources.SkipResourceListUnderChassis)
+		progress, _ = h.getAllRootInfo(ctx, "", progress, chassisEstimatedWork, req, config.Data.AddComputeSkipResources.SkipResourceListUnderChassis, 1)
 
 		//rediscovering the Manager Information
 		req.OID = "/redfish/v1/Managers"
 		managerEstimatedWork := int32(15)
-		progress = h.getAllRootInfo(ctx, "", progress, managerEstimatedWork, req, config.Data.AddComputeSkipResources.SkipResourceListUnderManager)
+		progress, _ = h.getAllRootInfo(ctx, "", progress, managerEstimatedWork, req, config.Data.AddComputeSkipResources.SkipResourceListUnderManager, 1)
 		agmodel.SaveBMCInventory(h.InventoryData)
 	}
 
@@ -179,14 +179,14 @@ func (e *ExternalInterface) RediscoverSystemInventory(ctx context.Context, devic
 	l.LogWithFields(ctx).Info("Rediscovery of the BMC with ID " + deviceUUID + " is now complete.")
 }
 
-//RediscoverResources is a function to rediscover the server inventory,
+// RediscoverResources is a function to rediscover the server inventory,
 // in the event of InMemory DB crashed and/or rebooted all of the content/inventory
 // in the Inmemory DB is gone. So to repopulate the inventory of all the added server,
 // this function can be used.
-//Takes: None
-//Returns: error
+// Takes: None
+// Returns: error
 // On success nil
-//On Failure Non nil
+// On Failure Non nil
 func (e *ExternalInterface) RediscoverResources() error {
 	// First check if the redicovery requires.
 	// InMemory DB is just fine most of the times.

@@ -50,6 +50,7 @@ func EventSubscriber(event interface{}) {
 		l.Log.Error("error while unmarshaling the event" + err.Error())
 		return
 	}
+	l.Log.Infof("Recieved message in EventSubscriper %s", string(byteData))
 	writeEventToJobQueue(message)
 }
 
@@ -128,6 +129,7 @@ func SubscribeCtrlMsgQueue(topicName string) {
 
 // consumeCtrlMsg consume control messages
 func consumeCtrlMsg(event interface{}) {
+	l.Log.Info("Recieved Message in consumeCtrlMessage %v", event)
 	var ctrlMessage common.ControlMessageData
 	done := make(chan bool)
 	data, _ := json.Marshal(&event)
@@ -135,12 +137,14 @@ func consumeCtrlMsg(event interface{}) {
 	// verifying the incoming event to check whether it's of type common events or control message data
 	if err := json.Unmarshal(data, &redfishEvent); err == nil {
 		writeEventToJobQueue(redfishEvent)
+		l.Log.Info("Wrote message ot redfishEventqueqe")
 	} else {
 		if err := json.Unmarshal(data, &ctrlMessage); err != nil {
 			l.Log.Error("error while unmarshaling the event" + err.Error())
 			return
 		}
 	}
+	l.Log.Info("Send data to ctrlMessageQueqe")
 	msg := []interface{}{ctrlMessage}
 	go common.RunWriteWorkers(CtrlMsgRecvQueue, msg, 1, done)
 	// range on the channel done, on receiving data on this

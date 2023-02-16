@@ -70,15 +70,18 @@ func (e *ExternalInterfaces) addFabric(message common.MessageData, host string) 
 
 // PublishEventsToDestination This method sends the event/alert to subscriber's destination
 // Takes:
-// 	data of type interface{}
-//Returns:
+//
+//	data of type interface{}
+//
+// Returns:
+//
 //	bool: return false if any error occurred during execution, else returns true
 func (e *ExternalInterfaces) PublishEventsToDestination(data interface{}) bool {
 	if data == nil {
 		l.Log.Info("invalid input params")
 		return false
 	}
-
+	l.Log.Info("Recieved data to publish to destination %v", data)
 	event := data.(common.Events)
 	if event.EventType == "PluginStartUp" {
 		l.Log.Info("received plugin started event from ", event.IP)

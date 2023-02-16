@@ -27,7 +27,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-//Publish will takes the system id,Event type and publishes the data to message bus
+// Publish will takes the system id,Event type and publishes the data to message bus
 func Publish(ctx context.Context, systemID, eventType, collectionType string) {
 	topicName := config.Data.MessageBusConf.OdimControlMessageQueue
 	k, err := dc.Communicator(config.Data.MessageBusConf.MessageBusType, config.Data.MessageBusConf.MessageBusConfigFilePath, topicName)
@@ -72,6 +72,7 @@ func Publish(ctx context.Context, systemID, eventType, collectionType string) {
 		l.LogWithFields(ctx).Error("Unable Publish events to kafka" + err.Error())
 		return
 	}
+	l.LogWithFields(ctx).Infof("Publish - Event Published to topic %s with the data %s", topicName, string(mbevent.IP)+string(mbevent.Request))
 	l.LogWithFields(ctx).Info("Event Published")
 
 }
@@ -95,5 +96,6 @@ func PublishCtrlMsg(msgType common.ControlMessage, msg interface{}) error {
 	if err := conn.Distribute(ctrlMsg); err != nil {
 		return fmt.Errorf("failed to write data to kafka: %s", err.Error())
 	}
+	l.Log.Infof("PublishCtrlMessage - Event Published to topic %s with the data %s and %v", topicName, string(ctrlMsg.MessageType), ctrlMsg.Data)
 	return nil
 }

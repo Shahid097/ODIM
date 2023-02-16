@@ -512,6 +512,7 @@ func ProcessCtrlMsg(data interface{}) bool {
 	event := data.(common.ControlMessageData)
 	msg, _ := json.Marshal(event.Data)
 	l.Log.Info("received control message event of type:", event.MessageType)
+	l.Log.Info("control Message %v", data)
 	if event.MessageType == common.SubscribeEMB {
 		var message common.SubscribeEMBData
 		if err := json.Unmarshal([]byte(msg), &message); err != nil {

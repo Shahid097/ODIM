@@ -141,11 +141,12 @@ func consumeCtrlMsg(event interface{}) {
 		l.Log.Info("Wrote message ot redfishEventqueqe")
 	} else {
 		if err := json.Unmarshal(data, &ctrlMessage); err != nil {
-			l.Log.Info("Recieved Message in consumeCtrlMessage %s", string(ctrlMessage.MessageType)+fmt.Sprintf("%v", ctrlMessage.Data))
 			l.Log.Error("error while unmarshaling the event" + err.Error())
 			return
 		}
+		l.Log.Info("Recieved Message in consumeCtrlMessage %s", string(ctrlMessage.MessageType)+fmt.Sprintf("%v", ctrlMessage.Data))
 	}
+
 	l.Log.Info("Send data to ctrlMessageQueqe")
 	msg := []interface{}{ctrlMessage}
 	go common.RunWriteWorkers(CtrlMsgRecvQueue, msg, 1, done)

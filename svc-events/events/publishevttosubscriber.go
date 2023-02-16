@@ -88,7 +88,7 @@ func (e *ExternalInterfaces) PublishEventsToDestination(data interface{}) bool {
 		go callPluginStartUp(event)
 		return true
 	}
-
+	l.Log.Info("Recieved data to publish to destination %s", string(event.IP)+string(event.Request))
 	// Extract the Hostname/IP of the event source and Event from input parameter
 	host, _, err := net.SplitHostPort(event.IP)
 	if err != nil {

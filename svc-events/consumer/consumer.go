@@ -19,6 +19,7 @@ package consumer
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	dc "github.com/ODIM-Project/ODIM/lib-messagebus/datacommunicator"
@@ -50,7 +51,7 @@ func EventSubscriber(event interface{}) {
 		l.Log.Error("error while unmarshaling the event" + err.Error())
 		return
 	}
-	l.Log.Infof("Recieved message in EventSubscriper %s", string(byteData))
+	l.Log.Infof("Recieved message in EventSubscriper %s", string(message.IP)+string(message.Request))
 	writeEventToJobQueue(message)
 }
 
@@ -129,17 +130,18 @@ func SubscribeCtrlMsgQueue(topicName string) {
 
 // consumeCtrlMsg consume control messages
 func consumeCtrlMsg(event interface{}) {
-	l.Log.Info("Recieved Message in consumeCtrlMessage %v", event)
 	var ctrlMessage common.ControlMessageData
 	done := make(chan bool)
 	data, _ := json.Marshal(&event)
 	var redfishEvent common.Events
 	// verifying the incoming event to check whether it's of type common events or control message data
 	if err := json.Unmarshal(data, &redfishEvent); err == nil {
+		l.Log.Info("Recieved Message in consumeCtrlMessage %s", string(redfishEvent.IP)+string(redfishEvent.Request))
 		writeEventToJobQueue(redfishEvent)
 		l.Log.Info("Wrote message ot redfishEventqueqe")
 	} else {
 		if err := json.Unmarshal(data, &ctrlMessage); err != nil {
+			l.Log.Info("Recieved Message in consumeCtrlMessage %s", string(ctrlMessage.MessageType)+fmt.Sprintf("%v", ctrlMessage.Data))
 			l.Log.Error("error while unmarshaling the event" + err.Error())
 			return
 		}

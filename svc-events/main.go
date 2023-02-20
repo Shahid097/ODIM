@@ -92,6 +92,7 @@ func main() {
 
 	// Subscribe to intercomm messagebus queue
 	go func() {
+		log.Info("go func for subscribing")
 		consumer.SubscribeCtrlMsgQueue(config.Data.MessageBusConf.OdimControlMessageQueue)
 		startUPInterface := evcommon.StartUpInteraface{
 			DecryptPassword: common.DecryptWithPrivateKey,

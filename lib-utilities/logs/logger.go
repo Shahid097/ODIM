@@ -151,7 +151,7 @@ func formatPriorityFields(entry *logrus.Entry, msg string) string {
 	for _, v := range priorityLogFields {
 		if val, ok := entry.Data[v]; ok {
 			present = false
-			msg = fmt.Sprintf("%s %v ", msg, val)
+			msg = fmt.Sprintf("%s %v", msg, val)
 		}
 	}
 	if !present {

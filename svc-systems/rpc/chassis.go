@@ -40,7 +40,7 @@ var (
 
 // NewChassisRPC returns an instance of ChassisRPC
 func NewChassisRPC(
-	authWrapper func(sessionToken string, privileges, oemPrivileges []string) (response.RPC, error),
+	authWrapper func(ctx context.Context, sessionToken string, privileges, oemPrivileges []string) (response.RPC, error),
 	createHandler *chassis.Create,
 	getCollectionHandler *chassis.GetCollection,
 	deleteHandler *chassis.Delete,
@@ -59,7 +59,7 @@ func NewChassisRPC(
 
 // ChassisRPC struct helps to register service
 type ChassisRPC struct {
-	IsAuthorizedRPC      func(sessionToken string, privileges, oemPrivileges []string) (response.RPC, error)
+	IsAuthorizedRPC      func(ctx context.Context, sessionToken string, privileges, oemPrivileges []string) (response.RPC, error)
 	GetCollectionHandler *chassis.GetCollection
 	GetHandler           *chassis.Get
 	DeleteHandler        *chassis.Delete

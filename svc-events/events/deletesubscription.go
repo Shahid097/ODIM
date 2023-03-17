@@ -177,7 +177,7 @@ func (e *ExternalInterfaces) deleteSubscription(ctx context.Context, target *com
 // DeleteEventSubscriptionsDetails delete subscription data against given subscription id
 func (e *ExternalInterfaces) DeleteEventSubscriptionsDetails(ctx context.Context, req *eventsproto.EventRequest) response.RPC {
 	var resp response.RPC
-	authResp, err := e.Auth(req.SessionToken, []string{common.PrivilegeConfigureComponents}, []string{})
+	authResp, err := e.Auth(ctx, req.SessionToken, []string{common.PrivilegeConfigureComponents}, []string{})
 	if authResp.StatusCode != http.StatusOK {
 		errMsg := fmt.Sprintf("error while trying to authenticate session: status code: %v, status message: %v", authResp.StatusCode, authResp.StatusMessage)
 		if err != nil {
@@ -502,7 +502,7 @@ func (e *ExternalInterfaces) DeleteFabricsSubscription(ctx context.Context, orig
 	return resp, nil
 }
 
-//  resubscribeFabricsSubscription updates subscription fabric subscription details  by forming the super set of MessageIDs,EventTypes and ResourceTypes
+// resubscribeFabricsSubscription updates subscription fabric subscription details  by forming the super set of MessageIDs,EventTypes and ResourceTypes
 func (e *ExternalInterfaces) resubscribeFabricsSubscription(ctx context.Context, subscriptionPost model.EventDestination, origin string, deleteflag bool) error {
 	originResources := e.getSuboridanteResourcesFromCollection(origin)
 	for _, origin := range originResources {

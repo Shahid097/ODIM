@@ -1155,7 +1155,7 @@ func (e *ExternalInterfaces) createFabricSubscription(ctx context.Context, postR
 // UpdateEventSubscriptions it will add subscription for newly Added system in aggregate
 func (e *ExternalInterfaces) UpdateEventSubscriptions(ctx context.Context, req *eventsproto.EventUpdateRequest, isRemove bool) error {
 	// var resp response.RPC
-	authResp, err := e.Auth(req.SessionToken, []string{common.PrivilegeConfigureComponents}, []string{})
+	authResp, err := e.Auth(ctx, req.SessionToken, []string{common.PrivilegeConfigureComponents}, []string{})
 	if err != nil {
 		l.LogWithFields(ctx).Errorf("Error while authorizing the session token : %s", err.Error())
 	}

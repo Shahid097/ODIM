@@ -56,12 +56,6 @@ type External struct {
 // DB struct to inject the contact DB function into the handlers
 type DB struct {
 	GetSessionUserName               func(ctx context.Context, sessionToken string) (string, error)
-	GetEvtSubscriptions              func(string) ([]evmodel.Subscription, error)
-	SaveEventSubscription            func(evmodel.Subscription) error
-	GetPluginData                    func(string) (*evmodel.Plugin, *errors.Error)
-	GetDeviceSubscriptions           func(string) (*evmodel.DeviceSubscription, error)
-	GetTarget                        func(string) (*evmodel.Target, error)
-	GetSessionUserName               func(sessionToken string) (string, error)
 	GetEvtSubscriptions              func(string) ([]evmodel.SubscriptionResource, error)
 	SaveEventSubscription            func(evmodel.SubscriptionResource) error
 	GetPluginData                    func(string) (*common.Plugin, *errors.Error)

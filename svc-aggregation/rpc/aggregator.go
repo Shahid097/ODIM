@@ -566,6 +566,8 @@ func (a *Aggregator) DeleteAggregationSource(ctx context.Context, req *aggregato
 	} else {
 		taskID = strArray[len(strArray)-1]
 	}
+	url := strings.Split(req.URL, "/")
+	l.LogWithFields(ctx).Info("Delete Agggregation for uuid ", url[5])
 	var threadID int = 1
 	ctxt := context.WithValue(ctx, common.ThreadName, common.DeleteAggregationSource)
 	ctxt = context.WithValue(ctxt, common.ThreadID, strconv.Itoa(threadID))

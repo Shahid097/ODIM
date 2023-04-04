@@ -30,6 +30,7 @@ import (
 	l "github.com/ODIM-Project/ODIM/lib-utilities/logs"
 	aggregatorproto "github.com/ODIM-Project/ODIM/lib-utilities/proto/aggregator"
 	"github.com/ODIM-Project/ODIM/lib-utilities/response"
+	"github.com/ODIM-Project/ODIM/svc-aggregation/agmodel"
 	"github.com/ODIM-Project/ODIM/svc-aggregation/agresponse"
 	"github.com/ODIM-Project/ODIM/svc-aggregation/system"
 )
@@ -567,7 +568,19 @@ func (a *Aggregator) DeleteAggregationSource(ctx context.Context, req *aggregato
 		taskID = strArray[len(strArray)-1]
 	}
 	url := strings.Split(req.URL, "/")
-	l.LogWithFields(ctx).Info("Delete Agggregation for uuid ", url[5])
+	l.LogWithFields(ctx).Info("Delete Agggregation for uuid ", "redfish/v1/Systems/"+url[5])
+	systemOperation, dbErr := agmodel.GetSystemOperationInfo(ctx, "redfish/v1/Systems/"+url[5])
+	if dbErr != nil {
+		errMsg := "unable to get the system operations for resource " + err.Error()
+		generateResponse(common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil), resp)
+		l.LogWithFields(ctx).Error(errMsg)
+		return resp, nil
+	}
+	if systemOperation.Operation == "InventoryRediscovery" {
+		errMsg := "unable to perform delete operation since Inventory rediscovery is ongoing"
+		generateResponse(common.GeneralError(http.StatusConflict, response.ResourceInUse, errMsg, nil, nil), resp)
+		return resp, nil
+	}
 	var threadID int = 1
 	ctxt := context.WithValue(ctx, common.ThreadName, common.DeleteAggregationSource)
 	ctxt = context.WithValue(ctxt, common.ThreadID, strconv.Itoa(threadID))

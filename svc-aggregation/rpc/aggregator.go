@@ -27,6 +27,7 @@ import (
 
 	"github.com/ODIM-Project/ODIM/lib-utilities/common"
 	"github.com/ODIM-Project/ODIM/lib-utilities/config"
+	"github.com/ODIM-Project/ODIM/lib-utilities/errors"
 	l "github.com/ODIM-Project/ODIM/lib-utilities/logs"
 	aggregatorproto "github.com/ODIM-Project/ODIM/lib-utilities/proto/aggregator"
 	"github.com/ODIM-Project/ODIM/lib-utilities/response"
@@ -570,8 +571,8 @@ func (a *Aggregator) DeleteAggregationSource(ctx context.Context, req *aggregato
 	url := strings.Split(req.URL, "/")
 	l.LogWithFields(ctx).Info("Delete Agggregation for uuid ", "redfish/v1/Systems/"+url[5])
 	systemOperation, dbErr := agmodel.GetSystemOperationInfo(ctx, "redfish/v1/Systems/"+url[5])
-	if dbErr != nil {
-		errMsg := "unable to get the system operations for resource " + err.Error()
+	if dbErr != nil && errors.DBKeyNotFound != dbErr.ErrNo() {
+		errMsg := "unable to get the system operations for resource " + dbErr.Error()
 		generateResponse(common.GeneralError(http.StatusInternalServerError, response.InternalError, errMsg, nil, nil), resp)
 		l.LogWithFields(ctx).Error(errMsg)
 		return resp, nil
@@ -584,7 +585,8 @@ func (a *Aggregator) DeleteAggregationSource(ctx context.Context, req *aggregato
 	var threadID int = 1
 	ctxt := context.WithValue(ctx, common.ThreadName, common.DeleteAggregationSource)
 	ctxt = context.WithValue(ctxt, common.ThreadID, strconv.Itoa(threadID))
-	go a.connector.DeleteAggregationSources(ctxt, taskID, targetURI, req)
+	l.LogWithFields(ctx).Infof("Delete triggered")
+	//	go a.connector.DeleteAggregationSources(ctxt, taskID, targetURI, req)
 	threadID++
 	// return 202 Accepted
 	var rpcResp = response.RPC{

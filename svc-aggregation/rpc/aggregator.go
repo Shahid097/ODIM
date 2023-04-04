@@ -534,7 +534,7 @@ func (a *Aggregator) DeleteAggregationSource(ctx context.Context, req *aggregato
 	ctx = common.ModifyContext(ctx, common.AggregationService, podName)
 	var oemprivileges []string
 	// Task Service using RPC and get the taskID
-	targetURI := req.URL
+	//targetURI := req.URL
 	privileges := []string{common.PrivilegeConfigureComponents}
 	authResp, err := a.connector.Auth(ctx, req.SessionToken, privileges, oemprivileges)
 	resp := &aggregatorproto.AggregatorResponse{}

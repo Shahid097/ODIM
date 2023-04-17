@@ -18,12 +18,18 @@
 package system
 
 import (
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"testing"
 
 	"github.com/ODIM-Project/ODIM/lib-utilities/common"
 	"github.com/ODIM-Project/ODIM/lib-utilities/config"
+	aggregatorproto "github.com/ODIM-Project/ODIM/lib-utilities/proto/aggregator"
 	"github.com/ODIM-Project/ODIM/svc-aggregation/agcommon"
 	"github.com/ODIM-Project/ODIM/svc-aggregation/agmodel"
+	"github.com/jarcoal/httpmock"
+	"github.com/kataras/iris"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -65,6 +71,64 @@ func Test_checkPluginStatus(t *testing.T) {
 	}
 }
 
+func TestSendStartUpData(t *testing.T) {
+	config.SetUpMockConfig(t)
+	p := getMockExternalInterface()
+	ctx := mockContext()
+	pluginId := "GRF"
+	defer removeMockPluginData(t, pluginId)
+	mockPlugins(t)
+	req := &aggregatorproto.SendStartUpDataRequest{
+		PluginAddr: "1.1.1.1:1234",
+		OriginURI:  "/mock",
+	}
+	resp := p.SendStartUpData(ctx, req)
+	assert.Equal(t, nil, resp.Body, "Body should be nil")
+}
+func TestSendStartUpData_Success(t *testing.T) {
+	config.SetUpMockConfig(t)
+	p := getMockExternalInterface()
+	ctx := mockContext()
+	pluginId := "GRF"
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	httpmock.RegisterResponder("GET", "https://1.1.1.1:1234/ODIM/v1/Status",
+		httpmock.NewStringResponder(200, `{Available:yes Uptime:361h11m56.037051983s TimeStamp:2023-04-14T09:50:21Z} EventMessageBus:{EmbType:Kafka EmbQueue:[{QueueName:REDFISH-EVENTS-TOPIC QueueDesc:Queue for redfish events}]}}`))
+	mockPlugins(t)
+	req := &aggregatorproto.SendStartUpDataRequest{
+		PluginAddr: "1.1.1.1:1234",
+		OriginURI:  "/mock",
+	}
+	agcommon.SetPluginStatusRecord("GRF", 2)
+	resp := p.SendStartUpData(ctx, req)
+	fmt.Println("resp", resp)
+	removeMockPluginData(t, pluginId)
+}
+
+type mockHandlerFunc func(iris.Context)
+
+func mockDeviceHandler(ctx iris.Context) {
+	url := ctx.RequestPath(false)
+	method := ctx.Method()
+
+	resp, err := mockPluginStatus()
+	if err != nil && resp == nil {
+		ctx.StatusCode(http.StatusInternalServerError)
+		ctx.WriteString("error: failed to change bios settings: " + err.Error())
+		return
+	}
+	body, _ := ioutil.ReadAll(resp.Body)
+	ctx.Write(body)
+	ctx.StatusCode(resp.StatusCode)
+}
+func mockPluginStatus() {
+
+}
+func mockHTTPSPlugins(handle) {
+	irisHandler := iris.Handler(mockHandlerFunc)
+	deviceApp := iris.New()
+	deviceRoutes := deviceApp.Party("/redfish")
+}
 func mockPlugins(t *testing.T) {
 	connPool, err := common.GetDBConnection(common.OnDisk)
 	if err != nil {
@@ -74,7 +138,7 @@ func mockPlugins(t *testing.T) {
 	password := getEncryptedKey(t, []byte("Password"))
 	pluginArr := []agmodel.Plugin{
 		{
-			IP:                "localhost",
+			IP:                "1.1.1.1",
 			Port:              "1234",
 			Password:          password,
 			Username:          "admin",
@@ -91,7 +155,16 @@ func mockPlugins(t *testing.T) {
 		}
 	}
 }
+func removeMockPluginData(t *testing.T, id string) {
+	connPool, err := common.GetDBConnection(common.OnDisk)
+	if err != nil {
+		t.Errorf("error while trying to connecting to DB: %v", err.Error())
+	}
+	if err := connPool.Delete("Plugin", id); err != nil {
+		t.Fatalf("error: %v", err)
+	}
 
+}
 func TestPushPluginStartUpData(t *testing.T) {
 	config.SetUpMockConfig(t)
 	defer func() {

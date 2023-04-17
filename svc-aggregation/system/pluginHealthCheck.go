@@ -76,6 +76,7 @@ func (e *ExternalInterface) SendStartUpData(ctx context.Context, startUpReq *agg
 
 		active, topics := phc.GetPluginStatus(ctx, plugin)
 		count, exist := GetPluginStatusRecord(plugin.ID)
+		fmt.Println(count, exist)
 		if !exist || (active && count != 0) {
 			agcommon.SetPluginStatusRecord(plugin.ID, 0)
 			PublishPluginStatusOKEvent(ctx, plugin.ID, topics)

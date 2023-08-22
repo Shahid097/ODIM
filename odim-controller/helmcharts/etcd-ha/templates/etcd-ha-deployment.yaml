@@ -35,9 +35,16 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: "kubernetes.io/hostname"
-                operator: In
-                values: [ {{ index .Values.hostname 0 }} ]
+              - key: "node-role.kubernetes.io/control-plane"
+                operator: Exists
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: "instance"
+                  operator: In
+                  values: ["etcd2", "etcd3"] 
+            topologyKey: "kubernetes.io/hostname"
       containers:
         - name: etcd1
           image: {{ .Values.odimra.imageRegistryAddress| default  }}etcd:{{ .Values.odimra.etcdImageTag }}
@@ -140,9 +147,16 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: "kubernetes.io/hostname"
-                operator: In
-                values: [ {{ index .Values.hostname 1 }} ]
+              - key: "node-role.kubernetes.io/control-plane"
+                operator: Exists
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: "instance"
+                  operator: In
+                  values: ["etcd1", "etcd3"] 
+            topologyKey: "kubernetes.io/hostname"
       containers:
         - name: etcd2
           image: {{ .Values.odimra.imageRegistryAddress| default  }}etcd:{{ .Values.odimra.etcdImageTag }}
@@ -245,9 +259,16 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: "kubernetes.io/hostname"
-                operator: In
-                values: [ {{ index .Values.hostname 2 }} ]
+              - key: "node-role.kubernetes.io/control-plane"
+                operator: Exists
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+                - key: "instance"
+                  operator: In
+                  values: ["etcd1", "etcd2"] 
+            topologyKey: "kubernetes.io/hostname"
       containers:
         - name: etcd3
           image: {{ .Values.odimra.imageRegistryAddress| default  }}etcd:{{ .Values.odimra.etcdImageTag }}
